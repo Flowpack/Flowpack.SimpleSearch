@@ -1,0 +1,5 @@
+Flowpack\SimpleSearch\Factory\IndexFactory:
+  scope: singleton
+
+Flowpack\SimpleSearch\Domain\Service\IndexInterface:
+  className: Flowpack\SimpleSearch\Domain\Service\SqLiteIndex
