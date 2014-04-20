@@ -1,10 +1,8 @@
 {
     "name": "flowpack/simplesearch",
     "type": "typo3-flow-package",
-    "description": "Add description here",
-    "require": {
-        "typo3/flow": "*"
-    },
+    "description": "Plain PHP search engine using sqlite3 as storage backend.",
+    "license": "MIT",
     "autoload": {
         "psr-0": {
             "Flowpack\\SimpleSearch": "Classes"
