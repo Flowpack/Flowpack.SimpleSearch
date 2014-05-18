@@ -60,7 +60,7 @@ class SqLiteIndex implements IndexInterface {
 	 */
 	public function indexData($identifier, $properties, $fullText) {
 		$this->adjustIndexToGivenProperties(array_keys($properties));
-		$existingRowid = $this->fetchPossiblityExistingEntry($identifier);
+		$existingRowid = $this->fetchEventuallyExistingEntry($identifier);
 
 		$existingRowid = $this->insertOrUpdatePropertiesToIndex($properties, $existingRowid);
 		$this->insertOrUpdateFulltextToIndex($fullText, $identifier, $existingRowid);
@@ -71,7 +71,7 @@ class SqLiteIndex implements IndexInterface {
 	 * @return void
 	 */
 	public function removeData($identifier) {
-		$rowid = $this->fetchPossiblityExistingEntry($identifier);
+		$rowid = $this->fetchEventuallyExistingEntry($identifier);
 		if ($rowid !== NULL) {
 			$this->connection->query('DELETE FROM objects WHERE rowid = ' . $rowid);
 			$this->connection->query('DELETE FROM fulltext WHERE rowid = ' . $rowid);
@@ -82,7 +82,7 @@ class SqLiteIndex implements IndexInterface {
 	 * @param string $identifier
 	 * @return integer
 	 */
-	protected function fetchPossiblityExistingEntry($identifier) {
+	protected function fetchEventuallyExistingEntry($identifier) {
 		$preparedStatement = $this->connection->prepare('SELECT rowid FROM objects WHERE __identifier__ = :identifier;');
 		$preparedStatement->bindValue(':identifier', $identifier);
 
@@ -119,6 +119,9 @@ class SqLiteIndex implements IndexInterface {
 
 		$statementArgumentNumber = 1;
 		foreach ($properties as $propertyValue) {
+			if (is_array($propertyValue)) {
+				$propertyValue = implode(',', $propertyValue);
+			}
 			$preparedStatement->bindValue($this->preparedStatementArgumentName($statementArgumentNumber), $propertyValue);
 			$statementArgumentNumber++;
 		}
@@ -148,6 +151,7 @@ class SqLiteIndex implements IndexInterface {
 		$preparedStatement->bindValue(':rowid', $rowid);
 		$preparedStatement->bindValue(':identifier', $identifier);
 		$preparedStatement->bindValue(':content', $fulltext);
+		$preparedStatement->execute();
 	}
 
 	/**
