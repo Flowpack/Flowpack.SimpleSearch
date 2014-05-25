@@ -102,9 +102,31 @@ class SqLiteQueryBuilder implements QueryBuilderInterface {
 	 * @return QueryBuilderInterface
 	 */
 	public function fulltext($searchword) {
-		$this->where[] = "(rowid IN (SELECT rowid FROM fulltext WHERE fulltext MATCH '" . $searchword . "'))";
+		$this->where[] = "(__identifier__ IN (SELECT __identifier__ FROM fulltext WHERE fulltext MATCH '" . $searchword . "' ORDER BY offsets(fulltext) ASC))";
 
 		return $this;
+	}
+
+	/**
+	 * @param string $searchword
+	 * @return array
+	 */
+	public function fulltextMatchResult($searchword, $resultTokens = -60, $ellipsis = '...', $beginModifier = '<b>', $endModifier = '</b>') {
+		$query = $this->buildQueryString();
+		$results = $this->indexClient->query($query);
+		$possibleIdentifiers = array();
+		foreach ($results as $result) {
+			$possibleIdentifiers[] = $result['__identifier__'];
+		}
+		// PROTECTION
+		$matchQuery = "SELECT snippet(fulltext, '$beginModifier', '$endModifier', '$ellipsis', -1, $resultTokens) as snippet FROM fulltext WHERE fulltext MATCH '" . $searchword . "' AND __identifier__ IN ('" . implode("','", $possibleIdentifiers) . "') LIMIT 1;";
+		$matchSnippet = $this->indexClient->query($matchQuery);
+		if (isset($matchSnippet[0]['snippet']) && $matchSnippet[0]['snippet'] !== '') {
+			$match = $matchSnippet[0]['snippet'];
+		} else {
+			$match = '';
+		}
+		return $match;
 	}
 
 	/**
@@ -130,7 +152,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface {
 		$whereString = implode(' AND ', $this->where);
 		$orderString = implode(', ', $this->sorting);
 
-		$queryString = 'SELECT * FROM objects WHERE ' . $whereString;
+		$queryString = 'SELECT DISTINCT(__identifier__), * FROM objects WHERE ' . $whereString;
 		if (count($this->sorting)) {
 			$queryString .= ' ORDER BY ' . $orderString;
 		}

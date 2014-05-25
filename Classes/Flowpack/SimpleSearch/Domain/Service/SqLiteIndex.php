@@ -55,15 +55,13 @@ class SqLiteIndex implements IndexInterface {
 	/**
 	 * @param $identifier identifier for the data
 	 * @param array $properties Properties to put into index
-	 * @param string $fullText string to push to fulltext index for this property
+	 * @param array $fullText array to push to fulltext index for this entry (keys are h1,h2,h3,h4,h5,h6,text) - all keys optional, results weighted by key
 	 * @return void
 	 */
 	public function indexData($identifier, $properties, $fullText) {
 		$this->adjustIndexToGivenProperties(array_keys($properties));
-		$existingRowid = $this->fetchEventuallyExistingEntry($identifier);
-
-		$existingRowid = $this->insertOrUpdatePropertiesToIndex($properties, $existingRowid);
-		$this->insertOrUpdateFulltextToIndex($fullText, $identifier, $existingRowid);
+		$this->insertOrUpdatePropertiesToIndex($properties, $identifier);
+		$this->insertOrUpdateFulltextToIndex($fullText, $identifier);
 	}
 
 	/**
@@ -71,40 +69,18 @@ class SqLiteIndex implements IndexInterface {
 	 * @return void
 	 */
 	public function removeData($identifier) {
-		$rowid = $this->fetchEventuallyExistingEntry($identifier);
-		if ($rowid !== NULL) {
-			$this->connection->query('DELETE FROM objects WHERE rowid = ' . $rowid);
-			$this->connection->query('DELETE FROM fulltext WHERE rowid = ' . $rowid);
-		}
-	}
-
-	/**
-	 * @param string $identifier
-	 * @return integer
-	 */
-	protected function fetchEventuallyExistingEntry($identifier) {
-		$preparedStatement = $this->connection->prepare('SELECT rowid FROM objects WHERE __identifier__ = :identifier;');
-		$preparedStatement->bindValue(':identifier', $identifier);
-
-		$result = $preparedStatement->execute();
-		if ($result->numColumns() && $result->columnType(0) != SQLITE3_NULL) {
-			$resultRow = $result->fetchArray(SQLITE3_ASSOC);
-			if (isset($resultRow['rowid'])) {
-				return $result['rowid'];
-			}
-		}
-
-		return NULL;
+		$this->connection->query('DELETE FROM objects WHERE __identifier__ = "' . $identifier . '"');
+		$this->connection->query('DELETE FROM fulltext WHERE __identifier__ = "' . $identifier . '"');
 	}
 
 	/**
 	 * @param array $properties
-	 * @param integer $rowid
-	 * @return integer rowid of inserted row
+	 * @param string $identifier
+	 * @return void
 	 */
-	protected function insertOrUpdatePropertiesToIndex($properties, $rowid = NULL) {
-		$propertyColumnNamesString = ($rowid !== NULL ? 'rowid, ' : '');
-		$valueNamesString = ($rowid !== NULL ? ':rowid, ' : '');
+	protected function insertOrUpdatePropertiesToIndex($properties, $identifier) {
+		$propertyColumnNamesString = '__identifier__, ';
+		$valueNamesString = ':__identifier__, ';
 		$statementArgumentNumber = 1;
 		foreach ($properties as $propertyName => $propertyValue) {
 			$propertyColumnNamesString .= $propertyName . ', ';
@@ -125,12 +101,10 @@ class SqLiteIndex implements IndexInterface {
 			$preparedStatement->bindValue($this->preparedStatementArgumentName($statementArgumentNumber), $propertyValue);
 			$statementArgumentNumber++;
 		}
-		if ($rowid !== NULL) {
-			$preparedStatement->bindValue(':rowid', $rowid);
-		}
+
+		$preparedStatement->bindValue(':__identifier__', $identifier);
 
 		$preparedStatement->execute();
-		return $this->connection->lastInsertRowID();
 	}
 
 	/**
@@ -144,13 +118,34 @@ class SqLiteIndex implements IndexInterface {
 	/**
 	 * @param string $fulltext
 	 * @param string $identifier
-	 * @param integer $rowid
 	 */
-	protected function insertOrUpdateFulltextToIndex($fulltext, $identifier, $rowid) {
-		$preparedStatement = $this->connection->prepare('INSERT OR REPLACE INTO fulltext (rowid, __identifier__, content) VALUES (:rowid, :identifier, :content);');
-		$preparedStatement->bindValue(':rowid', $rowid);
+	protected function insertOrUpdateFulltextToIndex($fulltext, $identifier) {
+		$preparedStatement = $this->connection->prepare('INSERT OR REPLACE INTO fulltext (__identifier__, h1, h2, h3, h4, h5, h6, text) VALUES (:identifier, :h1, :h2, :h3, :h4, :h5, :h6, :text);');
 		$preparedStatement->bindValue(':identifier', $identifier);
-		$preparedStatement->bindValue(':content', $fulltext);
+		$preparedStatement->bindValue(':h1', isset($fulltext['h1']) ? $fulltext['h1'] : '');
+		$preparedStatement->bindValue(':h2', isset($fulltext['h2']) ? $fulltext['h2'] : '');
+		$preparedStatement->bindValue(':h3', isset($fulltext['h3']) ? $fulltext['h3'] : '');
+		$preparedStatement->bindValue(':h4', isset($fulltext['h4']) ? $fulltext['h4'] : '');
+		$preparedStatement->bindValue(':h5', isset($fulltext['h5']) ? $fulltext['h5'] : '');
+		$preparedStatement->bindValue(':h6', isset($fulltext['h6']) ? $fulltext['h6'] : '');
+		$preparedStatement->bindValue(':text', isset($fulltext['text']) ? $fulltext['text'] : '');
+		$preparedStatement->execute();
+	}
+
+	/**
+	 * @param array $fulltext
+	 * @param string $identifier
+	 */
+	public function addToFulltext($fulltext, $identifier) {
+		$preparedStatement = $this->connection->prepare('UPDATE OR IGNORE fulltext SET h1 = (h1 || " " || :h1), h2 = (h2 || " " || :h2), h3 = (h3 || " " || :h3), h4 = (h4 || " " || :h4), h5 = (h5 || " " || :h5), h6 = (h6 || " " || :h6), text = (text || " " || :text) WHERE __identifier__ = :identifier;');
+		$preparedStatement->bindValue(':identifier', $identifier);
+		$preparedStatement->bindValue(':h1', isset($fulltext['h1']) ? $fulltext['h1'] : '');
+		$preparedStatement->bindValue(':h2', isset($fulltext['h2']) ? $fulltext['h2'] : '');
+		$preparedStatement->bindValue(':h3', isset($fulltext['h3']) ? $fulltext['h3'] : '');
+		$preparedStatement->bindValue(':h4', isset($fulltext['h4']) ? $fulltext['h4'] : '');
+		$preparedStatement->bindValue(':h5', isset($fulltext['h5']) ? $fulltext['h5'] : '');
+		$preparedStatement->bindValue(':h6', isset($fulltext['h6']) ? $fulltext['h6'] : '');
+		$preparedStatement->bindValue(':text', isset($fulltext['text']) ? $fulltext['text'] : '');
 		$preparedStatement->execute();
 	}
 
@@ -194,7 +189,13 @@ class SqLiteIndex implements IndexInterface {
 
 		$this->connection->exec('CREATE VIRTUAL TABLE fulltext USING fts3(
 			__identifier__ VARCHAR,
-			content TEXT
+			h1,
+			h2,
+			h3,
+			h4,
+			h5,
+			h6,
+			text
 		);');
 
 		$this->propertyFieldsAvailable = array();
