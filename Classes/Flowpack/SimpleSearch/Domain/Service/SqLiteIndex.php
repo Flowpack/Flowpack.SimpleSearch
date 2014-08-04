@@ -171,11 +171,19 @@ class SqLiteIndex implements IndexInterface {
 	}
 
 	/**
-	 *
+	 * completely empties the index.
 	 */
 	public function flush() {
-		$this->connection->exec('TRUNCATE TABLE objects;');
-		$this->connection->exec('TRUNCATE TABLE fulltext;');
+		$this->connection->exec('DROP TABLE objects;');
+		$this->connection->exec('DROP TABLE fulltext;');
+		$this->createIndexTables();
+	}
+
+	/**
+	 * Optimize the sqlite database.
+	 */
+	public function optimize() {
+		$this->connection->exec('VACUUM');
 	}
 
 	/**

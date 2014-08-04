@@ -51,7 +51,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface {
 	 * @return QueryBuilderInterface
 	 */
 	public function sortDesc($propertyName) {
-		$this->sorting[] = $propertyName . ' DESC';
+		$this->sorting[] = 'objects.' . $propertyName . ' DESC';
 
 		return $this;
 	}
@@ -64,7 +64,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface {
 	 * @return QueryBuilderInterface
 	 */
 	public function sortAsc($propertyName) {
-		$this->sorting[] = $propertyName . ' ASC';
+		$this->sorting[] = 'objects.' . $propertyName . ' ASC';
 
 		return $this;
 	}
@@ -108,10 +108,16 @@ class SqLiteQueryBuilder implements QueryBuilderInterface {
 	}
 
 	/**
-	 * @param string $searchword
-	 * @return array
+	 * Produces a snippet with the first match result for the search term.
+	 *
+	 * @param string $searchword The search word
+	 * @param integer $resultTokens The amount of tokens (words) to get surrounding the match hit. (defaults to 60)
+	 * @param string $ellipsis added to the end of the string if the text was longer than the snippet produced. (defaults to "...")
+	 * @param string $beginModifier added immediately before the searchword in the snippet (defaults to <b>)
+	 * @param string $endModifier added immediately after the searchword in the snippet (defaults to </b>)
+	 * @return string
 	 */
-	public function fulltextMatchResult($searchword, $resultTokens = -60, $ellipsis = '...', $beginModifier = '<b>', $endModifier = '</b>') {
+	public function fulltextMatchResult($searchword, $resultTokens = 60, $ellipsis = '...', $beginModifier = '<b>', $endModifier = '</b>') {
 		$query = $this->buildQueryString();
 		$results = $this->indexClient->query($query);
 		$possibleIdentifiers = array();
@@ -119,7 +125,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface {
 			$possibleIdentifiers[] = $result['__identifier__'];
 		}
 		// PROTECTION
-		$matchQuery = "SELECT snippet(fulltext, '$beginModifier', '$endModifier', '$ellipsis', -1, $resultTokens) as snippet FROM fulltext WHERE fulltext MATCH '" . $searchword . "' AND __identifier__ IN ('" . implode("','", $possibleIdentifiers) . "') LIMIT 1;";
+		$matchQuery = "SELECT snippet(fulltext, '$beginModifier', '$endModifier', '$ellipsis', -1, ($resultTokens * -1)) as snippet FROM fulltext WHERE fulltext MATCH '" . $searchword . "' AND __identifier__ IN ('" . implode("','", $possibleIdentifiers) . "') LIMIT 1;";
 		$matchSnippet = $this->indexClient->query($matchQuery);
 		if (isset($matchSnippet[0]['snippet']) && $matchSnippet[0]['snippet'] !== '') {
 			$match = $matchSnippet[0]['snippet'];

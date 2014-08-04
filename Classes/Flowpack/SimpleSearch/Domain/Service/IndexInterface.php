@@ -37,7 +37,16 @@ interface IndexInterface {
 	public function addToFulltext($fulltext, $identifier);
 
 	/**
+	 * Empty the index.
+	 *
 	 * @return void
 	 */
 	public function flush();
+
+	/**
+	 * Optimize the index, can be a void operation if the index has no such operation.
+	 *
+	 * @return void
+	 */
+	public function optimize();
 }
