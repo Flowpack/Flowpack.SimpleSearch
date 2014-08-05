@@ -59,9 +59,11 @@ class SqLiteIndex implements IndexInterface {
 	 * @return void
 	 */
 	public function indexData($identifier, $properties, $fullText) {
+		$this->connection->query('BEGIN IMMEDIATE TRANSACTION;');
 		$this->adjustIndexToGivenProperties(array_keys($properties));
 		$this->insertOrUpdatePropertiesToIndex($properties, $identifier);
 		$this->insertOrUpdateFulltextToIndex($fullText, $identifier);
+		$this->connection->query('COMMIT TRANSACTION;');
 	}
 
 	/**
