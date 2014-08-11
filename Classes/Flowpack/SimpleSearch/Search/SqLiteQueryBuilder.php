@@ -4,7 +4,7 @@ namespace Flowpack\SimpleSearch\Search;
 /**
  * Query Builder for searches
  */
-class SqLiteQueryBuilder implements QueryBuilderInterface {
+class SqLiteQueryBuilder {
 
 	/**
 	 * @var \Flowpack\SimpleSearch\Domain\Service\IndexInterface

@@ -4,8 +4,7 @@ namespace Flowpack\SimpleSearch\Search;
 use TYPO3\Flow\Annotations as Flow;
 
 /**
- *
- * Query Builder Interface for searches
+ * Query Builder Interface for searches, currently unused due to problems with PHP 5.3.x
  */
 interface QueryBuilderInterface {
 
