@@ -98,6 +98,19 @@ class SqLiteQueryBuilder {
 	}
 
 	/**
+	 * add an like query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @return QueryBuilderInterface
+	 */
+	public function like($propertyName, $propertyValue) {
+		$this->where[] = "(" . $propertyName . " LIKE '%" . $propertyValue . "%')";
+
+		return $this;
+	}
+
+	/**
 	 * @param string $searchword
 	 * @return QueryBuilderInterface
 	 */
