@@ -44,6 +44,15 @@ interface QueryBuilderInterface {
 	public function exactMatch($propertyName, $propertyValue);
 
 	/**
+	 * add an like query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @return QueryBuilderInterface
+	 */
+	public function like($propertyName, $propertyValue);
+
+	/**
 	 * Match the searchword against the fulltext index
 	 *
 	 * @param string $searchword
