@@ -180,6 +180,10 @@ class SqLiteQueryBuilder {
 			$queryString .= ' LIMIT ' . $this->limit;
 		}
 
+		if ($this->from !== NULL) {
+			$queryString .= ' OFFSET ' . $this->from;
+		}
+
 		return $queryString;
 	}
 
