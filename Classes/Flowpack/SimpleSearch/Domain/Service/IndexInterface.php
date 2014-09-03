@@ -13,6 +13,16 @@ interface IndexInterface {
 	public function indexData($identifier, $properties, $fullText);
 
 	/**
+	 * Use this only to update properties on existing entries. For new entries use "indexData"
+	 * This method is subject to change and could be removed from the interface at any time.
+	 *
+	 * @param array $properties
+	 * @param string $identifier
+	 * @return void
+	 */
+	public function insertOrUpdatePropertiesToIndex($properties, $identifier);
+
+	/**
 	 * @param string $identifier
 	 * @return void
 	 */

@@ -80,7 +80,7 @@ class SqLiteIndex implements IndexInterface {
 	 * @param string $identifier
 	 * @return void
 	 */
-	protected function insertOrUpdatePropertiesToIndex($properties, $identifier) {
+	public function insertOrUpdatePropertiesToIndex($properties, $identifier) {
 		$propertyColumnNamesString = '__identifier__, ';
 		$valueNamesString = ':__identifier__, ';
 		$statementArgumentNumber = 1;
