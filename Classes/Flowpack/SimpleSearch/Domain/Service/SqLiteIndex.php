@@ -85,8 +85,8 @@ class SqLiteIndex implements IndexInterface {
 		$valueNamesString = ':__identifier__, ';
 		$statementArgumentNumber = 1;
 		foreach ($properties as $propertyName => $propertyValue) {
-			$propertyColumnNamesString .= $propertyName . ', ';
-			$valueNamesString .= $this->preparedStatementArgumentName($statementArgumentNumber) . ' , ';
+			$propertyColumnNamesString .= '"' . $propertyName . '", ';
+			$valueNamesString .= '"' . $this->preparedStatementArgumentName($statementArgumentNumber) . '", ';
 			$statementArgumentNumber++;
 		}
 		$propertyColumnNamesString = trim($propertyColumnNamesString);
@@ -225,7 +225,7 @@ class SqLiteIndex implements IndexInterface {
 	 * @param string $propertyName
 	 */
 	protected function addPropertyToIndex($propertyName) {
-		$this->connection->exec('ALTER TABLE objects ADD COLUMN ' . $propertyName . ';');
+		$this->connection->exec('ALTER TABLE objects ADD COLUMN "' . $propertyName . '";');
 		$this->propertyFieldsAvailable[] = $propertyName;
 	}
 
