@@ -92,7 +92,7 @@ class SqLiteQueryBuilder {
 	 * @return QueryBuilderInterface
 	 */
 	public function exactMatch($propertyName, $propertyValue) {
-		$this->where[] = "(" . $propertyName . " = '" . $propertyValue . "')";
+		$this->where[] = sprintf("(`%s`) = '%s'", $propertyName, $propertyValue);
 
 		return $this;
 	}
@@ -105,7 +105,7 @@ class SqLiteQueryBuilder {
 	 * @return QueryBuilderInterface
 	 */
 	public function like($propertyName, $propertyValue) {
-		$this->where[] = "(" . $propertyName . " LIKE '%" . $propertyValue . "%')";
+		$this->where[] = "(`" . $propertyName . "` LIKE '%" . $propertyValue . "%')";
 
 		return $this;
 	}
