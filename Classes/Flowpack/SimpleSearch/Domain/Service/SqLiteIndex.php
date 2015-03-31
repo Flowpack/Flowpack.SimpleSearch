@@ -86,7 +86,7 @@ class SqLiteIndex implements IndexInterface {
 		$statementArgumentNumber = 1;
 		foreach ($properties as $propertyName => $propertyValue) {
 			$propertyColumnNamesString .= '"' . $propertyName . '", ';
-			$valueNamesString .= '"' . $this->preparedStatementArgumentName($statementArgumentNumber) . '", ';
+			$valueNamesString .= $this->preparedStatementArgumentName($statementArgumentNumber) . ', ';
 			$statementArgumentNumber++;
 		}
 		$propertyColumnNamesString = trim($propertyColumnNamesString);
