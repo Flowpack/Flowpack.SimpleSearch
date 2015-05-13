@@ -9,6 +9,14 @@ namespace Flowpack\SimpleSearch\Domain\Service;
 class SqLiteIndex implements IndexInterface {
 
 	/**
+	 * The storage folder for the index.
+	 * Should be a directory path ending with a slash.
+	 *
+	 * @var string
+	 */
+	protected $storageFolder;
+
+	/**
 	 * @var string
 	 */
 	protected $indexName;
@@ -28,15 +36,23 @@ class SqLiteIndex implements IndexInterface {
 	/**
 	 * @param string $indexName
 	 */
-	public function __construct($indexName) {
+	public function __construct($indexName, $storageFolder) {
 		$this->indexName = $indexName;
+	}
+
+	/**
+	 * @param string $storageFolder
+	 * @return void
+	 */
+	public function setStorageFolder($storageFolder) {
+		$this->storageFolder = $storageFolder;
 	}
 
 	/**
 	 * Lifecycle method
 	 */
 	public function initializeObject() {
-		$databaseFileName = FLOW_PATH_DATA . 'Persistent/Flowpack_SimpleSearch_SqLite/' . md5($this->getIndexName()) . '.db';
+		$databaseFileName = $this->storageFolder . md5($this->getIndexName()) . '.db';
 		$createDatabaseTables = FALSE;
 
 		if (!file_exists($databaseFileName)) {
@@ -71,8 +87,12 @@ class SqLiteIndex implements IndexInterface {
 	 * @return void
 	 */
 	public function removeData($identifier) {
-		$this->connection->query('DELETE FROM objects WHERE __identifier__ = "' . $identifier . '"');
-		$this->connection->query('DELETE FROM fulltext WHERE __identifier__ = "' . $identifier . '"');
+		$statement = $this->connection->prepare('DELETE FROM objects WHERE __identifier__ = :identifier;');
+		$statement->bindValue(':identifier', $identifier);
+		$statement->execute();
+		$statement = $this->connection->prepare('DELETE FROM fulltext WHERE __identifier__ = :identifier;');
+		$statement->bindValue(':identifier', $identifier);
+		$statement->execute();
 	}
 
 	/**
@@ -124,13 +144,7 @@ class SqLiteIndex implements IndexInterface {
 	protected function insertOrUpdateFulltextToIndex($fulltext, $identifier) {
 		$preparedStatement = $this->connection->prepare('INSERT OR REPLACE INTO fulltext (__identifier__, h1, h2, h3, h4, h5, h6, text) VALUES (:identifier, :h1, :h2, :h3, :h4, :h5, :h6, :text);');
 		$preparedStatement->bindValue(':identifier', $identifier);
-		$preparedStatement->bindValue(':h1', isset($fulltext['h1']) ? $fulltext['h1'] : '');
-		$preparedStatement->bindValue(':h2', isset($fulltext['h2']) ? $fulltext['h2'] : '');
-		$preparedStatement->bindValue(':h3', isset($fulltext['h3']) ? $fulltext['h3'] : '');
-		$preparedStatement->bindValue(':h4', isset($fulltext['h4']) ? $fulltext['h4'] : '');
-		$preparedStatement->bindValue(':h5', isset($fulltext['h5']) ? $fulltext['h5'] : '');
-		$preparedStatement->bindValue(':h6', isset($fulltext['h6']) ? $fulltext['h6'] : '');
-		$preparedStatement->bindValue(':text', isset($fulltext['text']) ? $fulltext['text'] : '');
+		$this->bindFulltextParametersToStatement($preparedStatement, $fulltext);
 		$preparedStatement->execute();
 	}
 
@@ -141,6 +155,17 @@ class SqLiteIndex implements IndexInterface {
 	public function addToFulltext($fulltext, $identifier) {
 		$preparedStatement = $this->connection->prepare('UPDATE OR IGNORE fulltext SET h1 = (h1 || " " || :h1), h2 = (h2 || " " || :h2), h3 = (h3 || " " || :h3), h4 = (h4 || " " || :h4), h5 = (h5 || " " || :h5), h6 = (h6 || " " || :h6), text = (text || " " || :text) WHERE __identifier__ = :identifier;');
 		$preparedStatement->bindValue(':identifier', $identifier);
+		$this->bindFulltextParametersToStatement($preparedStatement, $fulltext);
+		$preparedStatement->execute();
+	}
+
+	/**
+	 * Binds fulltext parameters to a prepared statement as this happens in multiple places.
+	 *
+	 * @param \SQLite3Stmt $preparedStatement
+	 * @param $fulltext
+	 */
+	protected function bindFulltextParametersToStatement(\SQLite3Stmt $preparedStatement, $fulltext) {
 		$preparedStatement->bindValue(':h1', isset($fulltext['h1']) ? $fulltext['h1'] : '');
 		$preparedStatement->bindValue(':h2', isset($fulltext['h2']) ? $fulltext['h2'] : '');
 		$preparedStatement->bindValue(':h3', isset($fulltext['h3']) ? $fulltext['h3'] : '');
@@ -148,15 +173,50 @@ class SqLiteIndex implements IndexInterface {
 		$preparedStatement->bindValue(':h5', isset($fulltext['h5']) ? $fulltext['h5'] : '');
 		$preparedStatement->bindValue(':h6', isset($fulltext['h6']) ? $fulltext['h6'] : '');
 		$preparedStatement->bindValue(':text', isset($fulltext['text']) ? $fulltext['text'] : '');
-		$preparedStatement->execute();
+	}
+
+	/**
+	 * Returns an index entry by identifier or NULL if it doesn't exist.
+	 *
+	 * @param string $identifier
+	 * @return array|FALSE
+	 */
+	public function findOneByIdentifier($identifier) {
+		$statement = $this->connection->prepare('SELECT * FROM objects WHERE __identifier__ = :identifier LIMIT 1');
+		$statement->bindValue(':identifier', $identifier);
+
+		return $statement->execute()->fetchArray(SQLITE3_ASSOC);
 	}
 
 	/**
 	 * @param string $query
 	 * @return array
+	 * @deprecated since 1.3 Use executeStatement instead
 	 */
 	public function query($query) {
 		$result = $this->connection->query($query);
+		$resultArray = array();
+		while ($resultRow = $result->fetchArray(SQLITE3_ASSOC)) {
+			$resultArray[] = $resultRow;
+		}
+
+		return $resultArray;
+	}
+
+	/**
+	 * Execute a prepared statement.
+	 *
+	 * @param string $statementQuery The statement query
+	 * @param array $parameters The statement parameters as map
+	 * @return \SQLite3Stmt
+	 */
+	public function executeStatement($statementQuery, array $parameters) {
+		$statement = $this->connection->prepare($statementQuery);
+		foreach ($parameters as $parameterName => $parameterValue) {
+			$statement->bindValue($parameterName, $parameterValue);
+		}
+
+		$result = $statement->execute();
 		$resultArray = array();
 		while ($resultRow = $result->fetchArray(SQLITE3_ASSOC)) {
 			$resultArray[] = $resultRow;

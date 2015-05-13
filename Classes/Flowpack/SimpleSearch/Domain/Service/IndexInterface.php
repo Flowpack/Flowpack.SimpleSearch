@@ -31,6 +31,7 @@ interface IndexInterface {
 	/**
 	 * @param string $query
 	 * @return array
+	 * @deprecated since 1.3 Use executeStatement instead
 	 */
 	public function query($query);
 
@@ -59,4 +60,14 @@ interface IndexInterface {
 	 * @return void
 	 */
 	public function optimize();
+
+	/**
+	 * Execute a query statement.
+	 *
+	 * @param $statementQuery
+	 * @param array $parameters
+	 * @return mixed
+	 */
+	public function executeStatement($statementQuery, array $parameters);
+
 }

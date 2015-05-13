@@ -1,6 +1,8 @@
 <?php
 namespace Flowpack\SimpleSearch\Factory;
 
+use TYPO3\Flow\Object\ObjectManagerInterface;
+
 /**
  * This factory keeps track of existing index instances
  *
@@ -9,7 +11,7 @@ namespace Flowpack\SimpleSearch\Factory;
 class IndexFactory {
 
 	/**
-	 * @var \TYPO3\Flow\Object\ObjectManagerInterface
+	 * @var ObjectManagerInterface
 	 */
 	protected $objectManager;
 
@@ -19,9 +21,9 @@ class IndexFactory {
 	protected $searchIndexInstances = array();
 
 	/**
-	 * @param \TYPO3\Flow\Object\ObjectManagerInterface $objectManager
+	 * @param ObjectManagerInterface $objectManager
 	 */
-	public function injectObjectManager(\TYPO3\Flow\Object\ObjectManagerInterface $objectManager) {
+	public function injectObjectManager(ObjectManagerInterface $objectManager) {
 		$this->objectManager = $objectManager;
 	}
 
@@ -33,7 +35,7 @@ class IndexFactory {
 	 */
 	public function create($indexName, $indexType = NULL) {
 		if (!isset($indexType)) {
-			if (!isset($this->objectManager)) {
+			if ($this->objectManager === NULL) {
 				throw new \Flowpack\SimpleSearch\Exception('If this package is used outside of a TYPO3 Flow context you must specify the $indexType argument.', 1398018955);
 			}
 

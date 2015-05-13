@@ -3,3 +3,8 @@ Flowpack\SimpleSearch\Factory\IndexFactory:
 
 Flowpack\SimpleSearch\Domain\Service\IndexInterface:
   className: Flowpack\SimpleSearch\Domain\Service\SqLiteIndex
+
+Flowpack\SimpleSearch\Domain\Service\SqLiteIndex:
+  properties:
+    storageFolder:
+      value: '%FLOW_PATH_DATA%Persistent/Flowpack_SimpleSearch_SqLite/'

@@ -1,8 +1,6 @@
 <?php
 namespace Flowpack\SimpleSearch\Search;
 
-use TYPO3\Flow\Annotations as Flow;
-
 /**
  * Query Builder Interface for searches, currently unused due to problems with PHP 5.3.x
  */
@@ -33,6 +31,14 @@ interface QueryBuilderInterface {
 	 * @return QueryBuilderInterface
 	 */
 	public function limit($limit);
+
+	/**
+	 * Start returned results $from number results.
+	 *
+	 * @param integer $from
+	 * @return QueryBuilderInterface
+	 */
+	public function from($from);
 
 	/**
 	 * add an exact-match query for a given property

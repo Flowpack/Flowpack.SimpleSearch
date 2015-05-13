@@ -36,6 +36,13 @@ class SqLiteQueryBuilder {
 	protected $where = array();
 
 	/**
+	 * Map of query parameters to bind to the final statement.
+	 *
+	 * @var array
+	 */
+	protected $parameterMap = array();
+
+	/**
 	 * Injection method used by Flow dependency injection
 	 *
 	 * @param \Flowpack\SimpleSearch\Domain\Service\IndexInterface $indexClient
@@ -69,18 +76,32 @@ class SqLiteQueryBuilder {
 		return $this;
 	}
 
-
 	/**
 	 * output only $limit records
 	 *
 	 * @param integer $limit
 	 * @return QueryBuilderInterface
 	 */
-	public function limit($limit) {
-		if ($limit) {
-			$this->limit = $limit;
+	public function limit($limit = NULL) {
+		if ($limit !== NULL) {
+			$limit = intval($limit);
+		}
+		$this->limit = $limit;
+		return $this;
+	}
+
+	/**
+	 * Start returned results $from number results.
+	 *
+	 * @param integer $from
+	 * @return QueryBuilderInterface
+	 */
+	public function from($from = NULL) {
+		if ($from !== NULL) {
+			$from = intval($from);
 		}
 
+		$this->from = intval($from);
 		return $this;
 	}
 
@@ -92,7 +113,9 @@ class SqLiteQueryBuilder {
 	 * @return QueryBuilderInterface
 	 */
 	public function exactMatch($propertyName, $propertyValue) {
-		$this->where[] = sprintf("(`%s`) = '%s'", $propertyName, $propertyValue);
+		$parameterName = ':' . md5($propertyName . '#' . count($this->where));
+		$this->parameterMap[$parameterName] = $propertyValue;
+		$this->where[] = sprintf("(`%s`) = %s", $propertyName, $parameterName);
 
 		return $this;
 	}
@@ -105,7 +128,9 @@ class SqLiteQueryBuilder {
 	 * @return QueryBuilderInterface
 	 */
 	public function like($propertyName, $propertyValue) {
-		$this->where[] = "(`" . $propertyName . "` LIKE '%" . $propertyValue . "%')";
+		$parameterName = ':' . md5($propertyName . '#' . count($this->where));
+		$this->where[] = '(`' . $propertyName . '` LIKE ' . $parameterName . ')';
+		$this->parameterMap[$parameterName] = '%' . $propertyValue . '%';
 
 		return $this;
 	}
@@ -115,9 +140,37 @@ class SqLiteQueryBuilder {
 	 * @return QueryBuilderInterface
 	 */
 	public function fulltext($searchword) {
-		$this->where[] = "(__identifier__ IN (SELECT __identifier__ FROM fulltext WHERE fulltext MATCH '" . $searchword . "' ORDER BY offsets(fulltext) ASC))";
+		$parameterName = ':' . md5('FULLTEXT#' . count($this->where));
+		$this->where[] = "(__identifier__ IN (SELECT __identifier__ FROM fulltext WHERE fulltext MATCH " . $parameterName . " ORDER BY offsets(fulltext) ASC))";
+		$this->parameterMap[$parameterName] = $searchword;
 
 		return $this;
+	}
+
+	/**
+	 * Execute the query and return the list of results
+	 *
+	 * @return array
+	 */
+	public function execute() {
+		$query = $this->buildQueryString();
+		$result = $this->indexClient->executeStatement($query, $this->parameterMap);
+
+		if (empty($result)) {
+			return array();
+		}
+
+		return array_values($result);
+	}
+
+	/**
+	 * Return the total number of hits for the query.
+	 *
+	 * @return integer
+	 */
+	public function count() {
+		$result = $this->execute();
+		return count($result);
 	}
 
 	/**
@@ -133,35 +186,30 @@ class SqLiteQueryBuilder {
 	public function fulltextMatchResult($searchword, $resultTokens = 60, $ellipsis = '...', $beginModifier = '<b>', $endModifier = '</b>') {
 		$query = $this->buildQueryString();
 		$results = $this->indexClient->query($query);
-		$possibleIdentifiers = array();
-		foreach ($results as $result) {
-			$possibleIdentifiers[] = $result['__identifier__'];
+		$queryParameters = array();
+		$identifierParameters = array();
+		foreach ($results as $key => $result) {
+			$parameterName = ':possibleIdentifier' . $key;
+			$identifierParameters[] = $parameterName;
+			$queryParameters[$parameterName] = $result['__identifier__'];
 		}
-		// PROTECTION
-		$matchQuery = "SELECT snippet(fulltext, '$beginModifier', '$endModifier', '$ellipsis', -1, ($resultTokens * -1)) as snippet FROM fulltext WHERE fulltext MATCH '" . $searchword . "' AND __identifier__ IN ('" . implode("','", $possibleIdentifiers) . "') LIMIT 1;";
-		$matchSnippet = $this->indexClient->query($matchQuery);
+
+		$queryParameters[':beginModifier'] = $beginModifier;
+		$queryParameters[':endModifier'] = $endModifier;
+		$queryParameters[':ellipsis'] = $ellipsis;
+		$queryParameters[':resultTokens'] = ($resultTokens * -1);
+
+
+		$matchQuery = 'SELECT snippet(fulltext, :beginModifier, :endModifier, :ellipsis, -1, :resultTokens) as snippet FROM fulltext WHERE fulltext MATCH :searchword AND __identifier__ IN (' . implode(',', $identifierParameters) . ') LIMIT 1;';
+		$queryParameters[':searchword'] = $searchword;
+		$matchSnippet = $this->indexClient->executeStatement($matchQuery, $queryParameters);
+
 		if (isset($matchSnippet[0]['snippet']) && $matchSnippet[0]['snippet'] !== '') {
 			$match = $matchSnippet[0]['snippet'];
 		} else {
 			$match = '';
 		}
 		return $match;
-	}
-
-	/**
-	 * Execute the query and return the list of results
-	 *
-	 * @return array
-	 */
-	public function execute() {
-		$query = $this->buildQueryString();
-		$result = $this->indexClient->query($query);
-
-		if (empty($result)) {
-			return array();
-		}
-
-		return array_values($result);
 	}
 
 	/**
@@ -185,15 +233,5 @@ class SqLiteQueryBuilder {
 		}
 
 		return $queryString;
-	}
-
-	/**
-	 * Return the total number of hits for the query.
-	 *
-	 * @return integer
-	 */
-	public function count() {
-		$result = $this->execute();
-		return count($result);
 	}
 }
