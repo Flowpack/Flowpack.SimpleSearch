@@ -136,6 +136,36 @@ class SqLiteQueryBuilder {
 	}
 
 	/**
+	 * Add a like query which matches the start of a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @return QueryBuilderInterface
+	 */
+	public function startsWith($propertyName, $propertyValue) {
+		$parameterName = ':' . md5($propertyName . '#' . count($this->where));
+		$this->where[] = '(`' . $propertyName . '` LIKE ' . $parameterName . ')';
+		$this->parameterMap[$parameterName] = $propertyValue . '%';
+
+		return $this;
+	}
+
+	/**
+	 * Add a like query which matches the end of a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @return QueryBuilderInterface
+	 */
+	public function endsWith($propertyName, $propertyValue) {
+		$parameterName = ':' . md5($propertyName . '#' . count($this->where));
+		$this->where[] = '(`' . $propertyName . '` LIKE ' . $parameterName . ')';
+		$this->parameterMap[$parameterName] = '%' . $propertyValue;
+
+		return $this;
+	}
+
+	/**
 	 * @param string $searchword
 	 * @return QueryBuilderInterface
 	 */
