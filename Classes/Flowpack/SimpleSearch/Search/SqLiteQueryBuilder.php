@@ -36,6 +36,13 @@ class SqLiteQueryBuilder {
 	protected $where = array();
 
 	/**
+	 * Grouping of results
+	 *
+	 * @var array
+	 */
+	protected $groups = array();
+
+	/**
 	 * Map of query parameters to bind to the final statement.
 	 *
 	 * @var array
@@ -161,6 +168,20 @@ class SqLiteQueryBuilder {
 		$parameterName = ':' . md5($propertyName . '#' . count($this->where));
 		$this->where[] = '(`' . $propertyName . '` LIKE ' . $parameterName . ')';
 		$this->parameterMap[$parameterName] = '%' . $propertyValue;
+
+		return $this;
+	}
+
+	/**
+	 * Add a group by part to the query like `objects.company`.
+	 * The prefix objects is needed to be able to make special group by
+	 * queries like `SUBSTR(objects.title, 1, 1)` to get all first letters.
+	 *
+	 * @param $propertyName
+	 * @return QueryBuilderInterface
+	 */
+	public function groupBy($propertyName) {
+		$this->groups[]= $propertyName;
 
 		return $this;
 	}
@@ -377,6 +398,10 @@ class SqLiteQueryBuilder {
 			$queryString = 'SELECT COUNT(DISTINCT(__identifier__)) AS objectCount FROM objects WHERE ' . $whereString;
 		} else {
 			$queryString = 'SELECT DISTINCT(__identifier__), * FROM objects WHERE ' . $whereString;
+		}
+
+		if (count($this->groups)) {
+			$queryString .= ' GROUP BY ' . implode(',', $this->groups);
 		}
 
 		if (!$countOnly && count($this->sorting)) {
