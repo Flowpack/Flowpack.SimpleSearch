@@ -199,8 +199,9 @@ class SqLiteQueryBuilder {
 	 * @return integer
 	 */
 	public function count() {
-		$result = $this->execute();
-		return count($result);
+		$query = $this->buildQueryString(TRUE);
+		$result = $this->indexClient->executeStatement($query, $this->parameterMap);
+		return $result[0]['objectCount'];
 	}
 
 	/**
@@ -365,14 +366,20 @@ class SqLiteQueryBuilder {
 	}
 
 	/**
+	 * @param bool $countOnly
 	 * @return string
 	 */
-	protected function buildQueryString() {
+	protected function buildQueryString($countOnly=FALSE) {
 		$whereString = implode(' AND ', $this->where);
 		$orderString = implode(', ', $this->sorting);
 
-		$queryString = 'SELECT DISTINCT(__identifier__), * FROM objects WHERE ' . $whereString;
-		if (count($this->sorting)) {
+		if ($countOnly) {
+			$queryString = 'SELECT COUNT(DISTINCT(__identifier__)) AS objectCount FROM objects WHERE ' . $whereString;
+		} else {
+			$queryString = 'SELECT DISTINCT(__identifier__), * FROM objects WHERE ' . $whereString;
+		}
+
+		if (!$countOnly && count($this->sorting)) {
 			$queryString .= ' ORDER BY ' . $orderString;
 		}
 
