@@ -276,8 +276,10 @@ class SqLiteIndex implements IndexInterface {
 	 */
 	protected function loadAvailablePropertyFields() {
 		$result = $this->connection->query('PRAGMA table_info(objects);');
-		while ($property = $result->fetchArray(SQLITE3_ASSOC)) {
-			$this->propertyFieldsAvailable[] = $property['name'];
+		if ($result !== FALSE) {
+			while ($property = $result->fetchArray(SQLITE3_ASSOC)) {
+				$this->propertyFieldsAvailable[] = $property['name'];
+			}
 		}
 	}
 
