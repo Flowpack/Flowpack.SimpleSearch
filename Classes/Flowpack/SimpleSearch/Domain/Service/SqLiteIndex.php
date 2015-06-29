@@ -35,31 +35,26 @@ class SqLiteIndex implements IndexInterface {
 
 	/**
 	 * @param string $indexName
+	 * @param string $storageFolder The absolute file path (with trailing slash) to store this index in.
 	 */
 	public function __construct($indexName, $storageFolder) {
 		$this->indexName = $indexName;
 	}
 
 	/**
-	 * @param string $storageFolder
-	 * @return void
-	 */
-	public function setStorageFolder($storageFolder) {
-		$this->storageFolder = $storageFolder;
-	}
-
-	/**
 	 * Lifecycle method
 	 */
 	public function initializeObject() {
-		$databaseFileName = $this->storageFolder . md5($this->getIndexName()) . '.db';
+		$databaseFilePath = $this->storageFolder . md5($this->getIndexName()) . '.db';
 		$createDatabaseTables = FALSE;
 
-		if (!file_exists($databaseFileName)) {
-			\TYPO3\Flow\Utility\Files::createDirectoryRecursively(FLOW_PATH_DATA . 'Persistent/Flowpack_SimpleSearch_SqLite');
+		if (!is_file($databaseFilePath)) {
+			if (!is_dir($this->storageFolder)) {
+				mkdir($this->storageFolder, 0777, TRUE);
+			}
 			$createDatabaseTables = TRUE;
 		}
-		$this->connection = new \SQLite3(FLOW_PATH_DATA . 'Persistent/Flowpack_SimpleSearch_SqLite/' . md5($this->getIndexName()) . '.db');
+		$this->connection = new \SQLite3($databaseFilePath);
 
 		if ($createDatabaseTables) {
 			$this->createIndexTables();
