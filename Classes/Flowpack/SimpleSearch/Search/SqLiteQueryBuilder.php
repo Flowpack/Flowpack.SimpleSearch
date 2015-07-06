@@ -1,5 +1,6 @@
 <?php
 namespace Flowpack\SimpleSearch\Search;
+use Flowpack\SimpleSearch\Domain\Service\IndexInterface;
 
 /**
  * Query Builder for searches
@@ -7,7 +8,7 @@ namespace Flowpack\SimpleSearch\Search;
 class SqLiteQueryBuilder {
 
 	/**
-	 * @var \Flowpack\SimpleSearch\Domain\Service\IndexInterface
+	 * @var IndexInterface
 	 */
 	protected $indexClient;
 
@@ -52,9 +53,9 @@ class SqLiteQueryBuilder {
 	/**
 	 * Injection method used by Flow dependency injection
 	 *
-	 * @param \Flowpack\SimpleSearch\Domain\Service\IndexInterface $indexClient
+	 * @param IndexInterface $indexClient
 	 */
-	public function injectIndexClient(\Flowpack\SimpleSearch\Domain\Service\IndexInterface $indexClient) {
+	public function injectIndexClient(IndexInterface $indexClient) {
 		$this->indexClient = $indexClient;
 	}
 
