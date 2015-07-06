@@ -114,6 +114,18 @@ class SqLiteQueryBuilder {
 	}
 
 	/**
+	 * Return results which have the specified property
+	 * @return QueryBuilderInterface
+	 */
+	public function has($propertyName) {
+		$parameterName = ':' . md5($propertyName . '#' . count($this->where));
+		$this->parameterMap[$parameterName] = '';
+		$this->where[] = sprintf("(`%s`) != %s", $propertyName, $parameterName);
+
+		return $this;
+	}
+
+	/**
 	 * add an exact-match query for a given property
 	 *
 	 * @param string $propertyName
