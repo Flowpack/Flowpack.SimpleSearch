@@ -35,10 +35,17 @@ class SqLiteIndex implements IndexInterface {
 
 	/**
 	 * @param string $indexName
-	 * @param string $storageFolder The absolute file path (with trailing slash) to store this index in.
 	 */
 	public function __construct($indexName, $storageFolder) {
 		$this->indexName = $indexName;
+		$this->storageFolder = $storageFolder;
+	}
+
+	/**
+	 * @param string $storageFolder
+	 */
+	public function setStorageFolder($storageFolder)
+	{
 		$this->storageFolder = $storageFolder;
 	}
 
