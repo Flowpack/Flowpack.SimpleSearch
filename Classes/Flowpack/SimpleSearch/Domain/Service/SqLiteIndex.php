@@ -39,6 +39,7 @@ class SqLiteIndex implements IndexInterface {
 	 */
 	public function __construct($indexName, $storageFolder) {
 		$this->indexName = $indexName;
+		$this->storageFolder = $storageFolder;
 	}
 
 	/**
