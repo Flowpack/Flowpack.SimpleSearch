@@ -5,6 +5,6 @@ Flowpack\SimpleSearch\Domain\Service\IndexInterface:
   className: Flowpack\SimpleSearch\Domain\Service\SqLiteIndex
 
 Flowpack\SimpleSearch\Domain\Service\SqLiteIndex:
-  properties:
-    storageFolder:
+  arguments:
+    2:
       value: '%FLOW_PATH_DATA%Persistent/Flowpack_SimpleSearch_SqLite/'
