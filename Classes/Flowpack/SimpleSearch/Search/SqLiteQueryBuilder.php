@@ -186,30 +186,36 @@ class SqLiteQueryBuilder {
 	public function fulltextMatchResult($searchword, $resultTokens = 60, $ellipsis = '...', $beginModifier = '<b>', $endModifier = '</b>') {
 		$query = $this->buildQueryString();
 		$results = $this->indexClient->query($query);
-		$queryParameters = array();
-		$identifierParameters = array();
-		foreach ($results as $key => $result) {
-			$parameterName = ':possibleIdentifier' . $key;
-			$identifierParameters[] = $parameterName;
-			$queryParameters[$parameterName] = $result['__identifier__'];
+
+		// SQLite3 has a hard-coded limit of 999 query variables, so we split the $result in chunks
+		// of 990 elements (we need some space for our own varialbles), query these, and return the first result.
+		// @see https://sqlite.org/limits.html -> "Maximum Number Of Host Parameters In A Single SQL Statement"
+		$chunks = array_chunk($results, 990);
+		foreach ($chunks as $chunk){
+			$queryParameters = array();
+			$identifierParameters = array();
+			foreach ($chunk as $key => $result) {
+				$parameterName = ':possibleIdentifier' . $key;
+				$identifierParameters[] = $parameterName;
+				$queryParameters[$parameterName] = $result['__identifier__'];
+			}
+
+			$queryParameters[':beginModifier'] = $beginModifier;
+			$queryParameters[':endModifier'] = $endModifier;
+			$queryParameters[':ellipsis'] = $ellipsis;
+			$queryParameters[':resultTokens'] = ($resultTokens * -1);
+
+
+			$matchQuery = 'SELECT snippet(fulltext, :beginModifier, :endModifier, :ellipsis, -1, :resultTokens) as snippet FROM fulltext WHERE fulltext MATCH :searchword AND __identifier__ IN (' . implode(',', $identifierParameters) . ') LIMIT 1;';
+			$queryParameters[':searchword'] = $searchword;
+			$matchSnippet = $this->indexClient->executeStatement($matchQuery, $queryParameters);
+
+			// If we have a hit here, we stop searching and return it.
+			if (isset($matchSnippet[0]['snippet']) && $matchSnippet[0]['snippet'] !== '') {
+				return $matchSnippet[0]['snippet'];
+			}
 		}
-
-		$queryParameters[':beginModifier'] = $beginModifier;
-		$queryParameters[':endModifier'] = $endModifier;
-		$queryParameters[':ellipsis'] = $ellipsis;
-		$queryParameters[':resultTokens'] = ($resultTokens * -1);
-
-
-		$matchQuery = 'SELECT snippet(fulltext, :beginModifier, :endModifier, :ellipsis, -1, :resultTokens) as snippet FROM fulltext WHERE fulltext MATCH :searchword AND __identifier__ IN (' . implode(',', $identifierParameters) . ') LIMIT 1;';
-		$queryParameters[':searchword'] = $searchword;
-		$matchSnippet = $this->indexClient->executeStatement($matchQuery, $queryParameters);
-
-		if (isset($matchSnippet[0]['snippet']) && $matchSnippet[0]['snippet'] !== '') {
-			$match = $matchSnippet[0]['snippet'];
-		} else {
-			$match = '';
-		}
-		return $match;
+		return '';
 	}
 
 	/**
