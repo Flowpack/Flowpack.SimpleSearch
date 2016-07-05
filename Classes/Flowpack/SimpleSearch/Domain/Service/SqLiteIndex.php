@@ -158,6 +158,10 @@ class SqLiteIndex implements IndexInterface {
 	public function query($query) {
 		$result = $this->connection->query($query);
 		$resultArray = array();
+		if ($result === false) {
+			return $resultArray;
+		}
+		
 		while ($resultRow = $result->fetchArray(SQLITE3_ASSOC)) {
 			$resultArray[] = $resultRow;
 		}
