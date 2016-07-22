@@ -148,6 +148,20 @@ class SqLiteQueryBuilder {
 	}
 
 	/**
+	 * add a greater than query for a given datetime property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @param string $format
+	 * @return QueryBuilderInterface
+	 */
+	public function greaterThanDatetime($propertyName, $propertyValue, $format = '%Y-%m-%d %H:%M:%S') {
+		$this->where[] = sprintf("datetime(`%s`) > strftime('%s', '%s')", $propertyName, $format, $propertyValue);
+
+		return $this;
+	}
+
+	/**
 	 * Execute the query and return the list of results
 	 *
 	 * @return array
