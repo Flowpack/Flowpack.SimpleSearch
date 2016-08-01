@@ -150,7 +150,7 @@ class SqLiteQueryBuilder {
 	 *
 	 * @param string $propertyName
 	 * @param string $propertyValue
-	 * @return SqLiteQueryBuilder
+	 * @return QueryBuilderInterface
 	 */
 	public function greaterThan($propertyName, $propertyValue) {
 		return $this->compare($propertyName, $propertyValue, '>');
@@ -161,7 +161,7 @@ class SqLiteQueryBuilder {
 	 *
 	 * @param string $propertyName
 	 * @param string $propertyValue
-	 * @return SqLiteQueryBuilder
+	 * @return QueryBuilderInterface
 	 */
 	public function greaterThanOrEqual($propertyName, $propertyValue) {
 		return $this->compare($propertyName, $propertyValue, '>=');
@@ -173,7 +173,7 @@ class SqLiteQueryBuilder {
 	 * @param $propertyName
 	 * @param $propertyValue
 	 * @param string $format
-	 * @return SqLiteQueryBuilder
+	 * @return QueryBuilderInterface
 	 */
 	public function lessThan($propertyName, $propertyValue) {
 		return $this->compare($propertyName, $propertyValue, '<');
@@ -184,7 +184,7 @@ class SqLiteQueryBuilder {
 	 *
 	 * @param $propertyName
 	 * @param $propertyValue
-	 * @return SqLiteQueryBuilder
+	 * @return QueryBuilderInterface
 	 */
 	public function lessThanOrEqual($propertyName, $propertyValue) {
 		return $this->compare($propertyName, $propertyValue, '<=');
@@ -288,7 +288,7 @@ class SqLiteQueryBuilder {
 	 * @param string $propertyName
 	 * @param mixed $propertyValue
 	 * @param string $comparator Comparator sign i.e. '>' or '<='
-	 * @return $this
+	 * @return QueryBuilderInterface
 	 */
 	protected function compare($propertyName, $propertyValue, $comparator) {
 		if ($propertyValue instanceof \DateTime) {
