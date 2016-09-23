@@ -113,9 +113,7 @@ class SqLiteQueryBuilder {
 	 * @return QueryBuilderInterface
 	 */
 	public function exactMatch($propertyName, $propertyValue) {
-		$parameterName = ':' . md5($propertyName . '#' . count($this->where));
-		$this->parameterMap[$parameterName] = $propertyValue;
-		$this->where[] = sprintf("(`%s`) = %s", $propertyName, $parameterName);
+		$this->compare($propertyName, $propertyValue, '=');
 
 		return $this;
 	}
@@ -145,6 +143,51 @@ class SqLiteQueryBuilder {
 		$this->parameterMap[$parameterName] = $searchword;
 
 		return $this;
+	}
+
+	/**
+	 * add a greater than query for a given property
+	 *
+	 * @param string $propertyName
+	 * @param string $propertyValue
+	 * @return QueryBuilderInterface
+	 */
+	public function greaterThan($propertyName, $propertyValue) {
+		return $this->compare($propertyName, $propertyValue, '>');
+	}
+
+	/**
+	 * add a greater than or equal query for a given property
+	 *
+	 * @param string $propertyName
+	 * @param string $propertyValue
+	 * @return QueryBuilderInterface
+	 */
+	public function greaterThanOrEqual($propertyName, $propertyValue) {
+		return $this->compare($propertyName, $propertyValue, '>=');
+	}
+
+	/**
+	 * add a less than query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @param string $format
+	 * @return QueryBuilderInterface
+	 */
+	public function lessThan($propertyName, $propertyValue) {
+		return $this->compare($propertyName, $propertyValue, '<');
+	}
+
+	/**
+	 * add a less than or equal query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @return QueryBuilderInterface
+	 */
+	public function lessThanOrEqual($propertyName, $propertyValue) {
+		return $this->compare($propertyName, $propertyValue, '<=');
 	}
 
 	/**
@@ -239,5 +282,23 @@ class SqLiteQueryBuilder {
 		}
 
 		return $queryString;
+	}
+
+	/**
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
+	 * @param string $comparator Comparator sign i.e. '>' or '<='
+	 * @return QueryBuilderInterface
+	 */
+	protected function compare($propertyName, $propertyValue, $comparator) {
+		if ($propertyValue instanceof \DateTime) {
+			$this->where[] = sprintf("datetime(`%s`) %s strftime('%s', '%s')", $propertyName, $comparator, '%Y-%m-%d %H:%M:%S', $propertyValue->format('Y-m-d H:i:s'));
+		} else {
+			$parameterName = ':' . md5($propertyName . '#' . count($this->where));
+			$this->parameterMap[$parameterName] = $propertyValue;
+			$this->where[] = sprintf("(`%s`) %s %s", $propertyName, $comparator, $parameterName);
+		}
+
+		return $this;
 	}
 }
