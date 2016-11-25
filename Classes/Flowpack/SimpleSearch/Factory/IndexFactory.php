@@ -1,7 +1,7 @@
 <?php
 namespace Flowpack\SimpleSearch\Factory;
 
-use TYPO3\Flow\Object\ObjectManagerInterface;
+use TYPO3\Flow\ObjectManagement\ObjectManagerInterface;
 
 /**
  * This factory keeps track of existing index instances
