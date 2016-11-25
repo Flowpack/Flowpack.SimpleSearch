@@ -7,5 +7,10 @@
         "psr-0": {
             "Flowpack\\SimpleSearch": "Classes"
         }
+    },
+    "extra": {
+        "applied-flow-migrations": [
+            "TYPO3.FLOW3-201201261636"
+        ]
     }
 }
