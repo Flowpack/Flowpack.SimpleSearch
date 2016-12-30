@@ -213,6 +213,95 @@ class SqLiteQueryBuilder {
 	}
 
 	/**
+	 * Match any value in the given array for the property
+	 *
+	 * @param string $propertyName
+	 * @param array $propertyValues
+	 * @return QueryBuilder
+	 */
+	public function anyMatch($propertyName, $propertyValues) {
+		if ($propertyValues === null || empty($propertyValues) || $propertyValues[0] === null) {
+			return $this;
+		}
+
+		$queryString = null;
+		$lastElemtentKey = count($propertyValues) - 1;
+		foreach($propertyValues as $key => $propertyValue) {
+			if ($propertyValue instanceof NodeInterface) {
+				$propertyValue = $propertyValue->getIdentifier();
+			}
+			$parameterName = ':' . md5($propertyName . '#' . count($this->where) . $key);
+			$this->parameterMap[$parameterName] = $propertyValue;
+
+			if ($key !== $lastElemtentKey) {
+				$queryString .= sprintf(" (`%s`) = %s OR ", $propertyName, $parameterName);
+			} else {
+				$queryString .= sprintf(" (`%s`) = %s", $propertyName, $parameterName);
+			}
+		}
+
+		$this->where[] = $queryString;
+
+		return $this;
+	}
+
+	/**
+	 * Add a range filter (gt) for the given property
+	 *
+	 * @param string $propertyName Name of the property
+	 * @param mixed $value Value for comparison
+	 * @return QueryBuilder
+	 * @api
+	 */
+	public function greaterThan($propertyName, $value) {
+		$this->where[] = sprintf(" (`%s`) > %s", $propertyName, $value);
+
+		return $this;
+	}
+
+	/**
+	 * Add a range filter (lt) for the given property
+	 *
+	 * @param string $propertyName Name of the property
+	 * @param mixed $value Value for comparison
+	 * @return QueryBuilder
+	 * @api
+	 */
+	public function lessThan($propertyName, $value) {
+		$this->where[] = sprintf(" (`%s`) < %s", $propertyName, $value);
+
+		return $this;
+	}
+
+	/**
+	 * Add a range filter (gte) for the given property
+	 *
+	 * @param string $propertyName Name of the property
+	 * @param mixed $value Value for comparison
+	 * @return QueryBuilder
+	 * @api
+	 */
+	public function greaterThanOrEqual($propertyName, $value) {
+		$this->where[] = sprintf(" (`%s`) >= %s", $propertyName, $value);
+
+		return $this;
+	}
+
+	/**
+	 * Add a range filter (lte) for the given property
+	 *
+	 * @param string $propertyName Name of the property
+	 * @param mixed $value Value for comparison
+	 * @return QueryBuilder
+	 * @api
+	 */
+	public function lessThanOrEqual($propertyName, $value) {
+		$this->where[] = sprintf(" (`%s`) <= %s", $propertyName, $value);
+
+		return $this;
+	}
+
+	/**
 	 * @return string
 	 */
 	protected function buildQueryString() {
