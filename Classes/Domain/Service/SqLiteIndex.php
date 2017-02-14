@@ -195,7 +195,7 @@ class SqLiteIndex implements IndexInterface {
 		if ($result === false) {
 			return $resultArray;
 		}
-		
+
 		while ($resultRow = $result->fetchArray(SQLITE3_ASSOC)) {
 			$resultArray[] = $resultRow;
 		}
