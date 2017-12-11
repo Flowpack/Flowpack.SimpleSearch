@@ -328,62 +328,6 @@ class SqLiteQueryBuilder {
 	}
 
 	/**
-	 * Add a range filter (gt) for the given property
-	 *
-	 * @param string $propertyName Name of the property
-	 * @param mixed $value Value for comparison
-	 * @return QueryBuilder
-	 * @api
-	 */
-	public function greaterThan($propertyName, $value) {
-		$this->where[] = sprintf(" (`%s`) > %s", $propertyName, $value);
-
-		return $this;
-	}
-
-	/**
-	 * Add a range filter (lt) for the given property
-	 *
-	 * @param string $propertyName Name of the property
-	 * @param mixed $value Value for comparison
-	 * @return QueryBuilder
-	 * @api
-	 */
-	public function lessThan($propertyName, $value) {
-		$this->where[] = sprintf(" (`%s`) < %s", $propertyName, $value);
-
-		return $this;
-	}
-
-	/**
-	 * Add a range filter (gte) for the given property
-	 *
-	 * @param string $propertyName Name of the property
-	 * @param mixed $value Value for comparison
-	 * @return QueryBuilder
-	 * @api
-	 */
-	public function greaterThanOrEqual($propertyName, $value) {
-		$this->where[] = sprintf(" (`%s`) >= %s", $propertyName, $value);
-
-		return $this;
-	}
-
-	/**
-	 * Add a range filter (lte) for the given property
-	 *
-	 * @param string $propertyName Name of the property
-	 * @param mixed $value Value for comparison
-	 * @return QueryBuilder
-	 * @api
-	 */
-	public function lessThanOrEqual($propertyName, $value) {
-		$this->where[] = sprintf(" (`%s`) <= %s", $propertyName, $value);
-
-		return $this;
-	}
-
-	/**
 	 * @return string
 	 */
 	protected function buildQueryString() {
