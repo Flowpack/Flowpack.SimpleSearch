@@ -120,7 +120,6 @@ class SqLiteIndex implements IndexInterface {
 					}
 				}
 				$propertyValue = implode(',', $propertyValue);
-
 			}
 			$preparedStatement->bindValue($this->preparedStatementArgumentName($statementArgumentNumber), $propertyValue);
 			$statementArgumentNumber++;
