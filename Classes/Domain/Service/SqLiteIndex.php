@@ -114,7 +114,13 @@ class SqLiteIndex implements IndexInterface {
 		$statementArgumentNumber = 1;
 		foreach ($properties as $propertyValue) {
 			if (is_array($propertyValue)) {
+				foreach($propertyValue AS $key => $value) {
+					if(is_array($value)) { 
+						$propertyValue[ $key ] = implode(",", $value); 
+					}
+				}
 				$propertyValue = implode(',', $propertyValue);
+
 			}
 			$preparedStatement->bindValue($this->preparedStatementArgumentName($statementArgumentNumber), $propertyValue);
 			$statementArgumentNumber++;
