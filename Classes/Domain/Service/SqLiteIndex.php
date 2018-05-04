@@ -114,7 +114,7 @@ class SqLiteIndex implements IndexInterface {
 		$statementArgumentNumber = 1;
 		foreach ($properties as $propertyValue) {
 			if (is_array($propertyValue)) {
-				$propertyValue = implode(',', $propertyValue);
+				$propertyValue = json_encode($propertyValue);
 			}
 			$preparedStatement->bindValue($this->preparedStatementArgumentName($statementArgumentNumber), $propertyValue);
 			$statementArgumentNumber++;
@@ -195,7 +195,7 @@ class SqLiteIndex implements IndexInterface {
 		if ($result === false) {
 			return $resultArray;
 		}
-		
+
 		while ($resultRow = $result->fetchArray(SQLITE3_ASSOC)) {
 			$resultArray[] = $resultRow;
 		}
