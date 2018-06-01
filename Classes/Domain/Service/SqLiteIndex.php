@@ -114,7 +114,7 @@ class SqLiteIndex implements IndexInterface {
 		$statementArgumentNumber = 1;
 		foreach ($properties as $propertyValue) {
 			if (is_array($propertyValue)) {
-				$propertyValue = implode(',', $propertyValue);
+				$propertyValue = $this->implodeRecursive(',', $propertyValue);
 			}
 			$preparedStatement->bindValue($this->preparedStatementArgumentName($statementArgumentNumber), $propertyValue);
 			$statementArgumentNumber++;
@@ -299,5 +299,22 @@ class SqLiteIndex implements IndexInterface {
 				$this->addPropertyToIndex($propertyName);
 			}
 		}
+	}
+	
+	/**
+ 	* @param string $glue
+	* @param array $pieces
+	* @return string
+	*/
+	private function implodeRecursive($glue, $pieces) {
+		$stringValue = '';
+		array_walk_recursive($pieces,
+			function($cellValue) use (&$stringValue, $glue) {
+				$stringValue .= $cellValue . $glue;
+		});
+
+		// Remove trailing glue
+		$stringValue = substr($stringValue, 0, 0 - strlen($glue));
+		return $stringValue;
 	}
 }
