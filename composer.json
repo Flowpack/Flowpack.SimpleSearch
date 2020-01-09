@@ -1,7 +1,7 @@
 {
     "name": "flowpack/simplesearch",
     "type": "neos-package",
-    "description": "Plain PHP search engine using sqlite3 as storage backend.",
+    "description": "Plain PHP search engine using sqlite3 or MySQL as storage backend.",
     "license": "MIT",
     "require": {
         "neos/flow": "^5.0 || ^6.0 || dev-master"
