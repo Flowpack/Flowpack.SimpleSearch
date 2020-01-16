@@ -271,10 +271,16 @@ class MysqlIndex implements IndexInterface
     }
 
     /**
-     * Optimize the sqlite database.
+     * Optimize the database tables.
+     *
+     * @noinspection PdoApiUsageInspection query MUST be used for OPTIMIZE TABLE to work
      */
     public function optimize(): void
     {
+        $this->connection->exec('SET GLOBAL innodb_optimize_fulltext_only = 1');
+        $this->connection->query('OPTIMIZE TABLE "fulltext_index"');
+        $this->connection->exec('SET GLOBAL innodb_optimize_fulltext_only = 0');
+        $this->connection->query('OPTIMIZE TABLE "fulltext_objects", "fulltext_index"');
     }
 
     /**
