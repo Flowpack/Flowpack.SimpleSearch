@@ -1,11 +1,12 @@
-<?php
+<?php /** @noinspection SqlResolve */
 namespace Flowpack\SimpleSearch\Search;
+
 use Flowpack\SimpleSearch\Domain\Service\IndexInterface;
 
 /**
  * Query Builder for searches
  */
-class SqLiteQueryBuilder {
+class SqLiteQueryBuilder implements QueryBuilderInterface {
 
 	/**
 	 * @var IndexInterface
@@ -35,13 +36,6 @@ class SqLiteQueryBuilder {
 	 * @var array
 	 */
 	protected $where = array();
-
-	/**
-	 * Grouping of results
-	 *
-	 * @var array
-	 */
-	protected $groups = array();
 
 	/**
 	 * Map of query parameters to bind to the final statement.
@@ -92,7 +86,7 @@ class SqLiteQueryBuilder {
 	 */
 	public function limit($limit = NULL) {
 		if ($limit !== NULL) {
-			$limit = intval($limit);
+			$limit = (int)$limit;
 		}
 		$this->limit = $limit;
 		return $this;
@@ -106,22 +100,10 @@ class SqLiteQueryBuilder {
 	 */
 	public function from($from = NULL) {
 		if ($from !== NULL) {
-			$from = intval($from);
+			$from = (int)$from;
 		}
 
-		$this->from = intval($from);
-		return $this;
-	}
-
-	/**
-	 * Return results which have the specified property
-	 * @return QueryBuilderInterface
-	 */
-	public function has($propertyName) {
-		$parameterName = ':' . md5($propertyName . '#' . count($this->where));
-		$this->parameterMap[$parameterName] = '';
-		$this->where[] = sprintf("(`%s`) != %s", $propertyName, $parameterName);
-
+		$this->from = (int)$from;
 		return $this;
 	}
 
@@ -133,9 +115,7 @@ class SqLiteQueryBuilder {
 	 * @return QueryBuilderInterface
 	 */
 	public function exactMatch($propertyName, $propertyValue) {
-		$parameterName = ':' . md5($propertyName . '#' . count($this->where));
-		$this->parameterMap[$parameterName] = $propertyValue;
-		$this->where[] = sprintf("(`%s`) = %s", $propertyName, $parameterName);
+		$this->compare($propertyName, $propertyValue, '=');
 
 		return $this;
 	}
@@ -143,58 +123,14 @@ class SqLiteQueryBuilder {
 	/**
 	 * add an like query for a given property
 	 *
-	 * @param $propertyName
-	 * @param $propertyValue
+	 * @param string $propertyName
+	 * @param string $propertyValue
 	 * @return QueryBuilderInterface
 	 */
 	public function like($propertyName, $propertyValue) {
 		$parameterName = ':' . md5($propertyName . '#' . count($this->where));
 		$this->where[] = '(`' . $propertyName . '` LIKE ' . $parameterName . ')';
 		$this->parameterMap[$parameterName] = '%' . $propertyValue . '%';
-
-		return $this;
-	}
-
-	/**
-	 * Add a like query which matches the start of a given property
-	 *
-	 * @param $propertyName
-	 * @param $propertyValue
-	 * @return QueryBuilderInterface
-	 */
-	public function startsWith($propertyName, $propertyValue) {
-		$parameterName = ':' . md5($propertyName . '#' . count($this->where));
-		$this->where[] = '(`' . $propertyName . '` LIKE ' . $parameterName . ')';
-		$this->parameterMap[$parameterName] = $propertyValue . '%';
-
-		return $this;
-	}
-
-	/**
-	 * Add a like query which matches the end of a given property
-	 *
-	 * @param $propertyName
-	 * @param $propertyValue
-	 * @return QueryBuilderInterface
-	 */
-	public function endsWith($propertyName, $propertyValue) {
-		$parameterName = ':' . md5($propertyName . '#' . count($this->where));
-		$this->where[] = '(`' . $propertyName . '` LIKE ' . $parameterName . ')';
-		$this->parameterMap[$parameterName] = '%' . $propertyValue;
-
-		return $this;
-	}
-
-	/**
-	 * Add a group by part to the query like `objects.company`.
-	 * The prefix objects is needed to be able to make special group by
-	 * queries like `SUBSTR(objects.title, 1, 1)` to get all first letters.
-	 *
-	 * @param $propertyName
-	 * @return QueryBuilderInterface
-	 */
-	public function groupBy($propertyName) {
-		$this->groups[]= $propertyName;
 
 		return $this;
 	}
@@ -209,6 +145,50 @@ class SqLiteQueryBuilder {
 		$this->parameterMap[$parameterName] = $searchword;
 
 		return $this;
+	}
+
+	/**
+	 * add a greater than query for a given property
+	 *
+	 * @param string $propertyName
+	 * @param string $propertyValue
+	 * @return QueryBuilderInterface
+	 */
+	public function greaterThan($propertyName, $propertyValue) {
+		return $this->compare($propertyName, $propertyValue, '>');
+	}
+
+	/**
+	 * add a greater than or equal query for a given property
+	 *
+	 * @param string $propertyName
+	 * @param string $propertyValue
+	 * @return QueryBuilderInterface
+	 */
+	public function greaterThanOrEqual($propertyName, $propertyValue) {
+		return $this->compare($propertyName, $propertyValue, '>=');
+	}
+
+	/**
+	 * add a less than query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @return QueryBuilderInterface
+	 */
+	public function lessThan($propertyName, $propertyValue) {
+		return $this->compare($propertyName, $propertyValue, '<');
+	}
+
+	/**
+	 * add a less than or equal query for a given property
+	 *
+	 * @param $propertyName
+	 * @param $propertyValue
+	 * @return QueryBuilderInterface
+	 */
+	public function lessThanOrEqual($propertyName, $propertyValue) {
+		return $this->compare($propertyName, $propertyValue, '<=');
 	}
 
 	/**
@@ -233,9 +213,8 @@ class SqLiteQueryBuilder {
 	 * @return integer
 	 */
 	public function count() {
-		$query = $this->buildQueryString(TRUE);
-		$result = $this->indexClient->executeStatement($query, $this->parameterMap);
-		return $result[0]['objectCount'];
+		$result = $this->execute();
+		return count($result);
 	}
 
 	/**
@@ -251,30 +230,35 @@ class SqLiteQueryBuilder {
 	public function fulltextMatchResult($searchword, $resultTokens = 60, $ellipsis = '...', $beginModifier = '<b>', $endModifier = '</b>') {
 		$query = $this->buildQueryString();
 		$results = $this->indexClient->query($query);
-		$queryParameters = array();
-		$identifierParameters = array();
-		foreach ($results as $key => $result) {
-			$parameterName = ':possibleIdentifier' . $key;
-			$identifierParameters[] = $parameterName;
-			$queryParameters[$parameterName] = $result['__identifier__'];
+
+		// SQLite3 has a hard-coded limit of 999 query variables, so we split the $result in chunks
+		// of 990 elements (we need some space for our own varialbles), query these, and return the first result.
+		// @see https://sqlite.org/limits.html -> "Maximum Number Of Host Parameters In A Single SQL Statement"
+		$chunks = array_chunk($results, 990);
+		foreach ($chunks as $chunk){
+			$queryParameters = array();
+			$identifierParameters = array();
+			foreach ($chunk as $key => $result) {
+				$parameterName = ':possibleIdentifier' . $key;
+				$identifierParameters[] = $parameterName;
+				$queryParameters[$parameterName] = $result['__identifier__'];
+			}
+
+			$queryParameters[':beginModifier'] = $beginModifier;
+			$queryParameters[':endModifier'] = $endModifier;
+			$queryParameters[':ellipsis'] = $ellipsis;
+			$queryParameters[':resultTokens'] = ($resultTokens * -1);
+
+			$matchQuery = 'SELECT snippet(fulltext, :beginModifier, :endModifier, :ellipsis, -1, :resultTokens) as snippet FROM fulltext WHERE fulltext MATCH :searchword AND __identifier__ IN (' . implode(',', $identifierParameters) . ') LIMIT 1;';
+			$queryParameters[':searchword'] = $searchword;
+			$matchSnippet = $this->indexClient->executeStatement($matchQuery, $queryParameters);
+
+			// If we have a hit here, we stop searching and return it.
+			if (isset($matchSnippet[0]['snippet']) && $matchSnippet[0]['snippet'] !== '') {
+				return $matchSnippet[0]['snippet'];
+			}
 		}
-
-		$queryParameters[':beginModifier'] = $beginModifier;
-		$queryParameters[':endModifier'] = $endModifier;
-		$queryParameters[':ellipsis'] = $ellipsis;
-		$queryParameters[':resultTokens'] = ($resultTokens * -1);
-
-
-		$matchQuery = 'SELECT snippet(fulltext, :beginModifier, :endModifier, :ellipsis, -1, :resultTokens) as snippet FROM fulltext WHERE fulltext MATCH :searchword AND __identifier__ IN (' . implode(',', $identifierParameters) . ') LIMIT 1;';
-		$queryParameters[':searchword'] = $searchword;
-		$matchSnippet = $this->indexClient->executeStatement($matchQuery, $queryParameters);
-
-		if (isset($matchSnippet[0]['snippet']) && $matchSnippet[0]['snippet'] !== '') {
-			$match = $matchSnippet[0]['snippet'];
-		} else {
-			$match = '';
-		}
-		return $match;
+		return '';
 	}
 
 	/**
@@ -282,7 +266,7 @@ class SqLiteQueryBuilder {
 	 *
 	 * @param string $propertyName
 	 * @param array $propertyValues
-	 * @return QueryBuilder
+	 * @return QueryBuilderInterface
 	 */
 	public function anyMatch($propertyName, $propertyValues) {
 		if ($propertyValues === null || empty($propertyValues) || $propertyValues[0] === null) {
@@ -299,9 +283,9 @@ class SqLiteQueryBuilder {
 				$queryString .= '(';
 			}
 			if ($key !== $lastElemtentKey) {
-				$queryString .= sprintf("(`%s`) = %s OR ", $propertyName, $parameterName);
+				$queryString .= sprintf('(`%s`) = %s OR ', $propertyName, $parameterName);
 			} else {
-				$queryString .= sprintf("(`%s`) = %s )", $propertyName, $parameterName);
+				$queryString .= sprintf('(`%s`) = %s )', $propertyName, $parameterName);
 			}
 		}
 
@@ -315,7 +299,7 @@ class SqLiteQueryBuilder {
 	 *
 	 * @param string $propertyName
 	 * @param array $propertyValues
-	 * @return QueryBuilder
+	 * @return QueryBuilderInterface
 	 */
 	public function likeAnyMatch($propertyName, $propertyValues) {
 		if ($propertyValues === null || empty($propertyValues) || $propertyValues[0] === null) {
@@ -332,9 +316,9 @@ class SqLiteQueryBuilder {
 				$queryString .= '(';
 			}
 			if ($key !== $lastElemtentKey) {
-				$queryString .= sprintf("(`%s`) LIKE %s OR ", $propertyName, $parameterName);
+				$queryString .= sprintf('(`%s`) LIKE %s OR ', $propertyName, $parameterName);
 			} else {
-				$queryString .= sprintf("(`%s`) LIKE %s)", $propertyName, $parameterName);
+				$queryString .= sprintf('(`%s`) LIKE %s)', $propertyName, $parameterName);
 			}
 		}
 
@@ -344,80 +328,14 @@ class SqLiteQueryBuilder {
 	}
 
 	/**
-	 * Add a range filter (gt) for the given property
-	 *
-	 * @param string $propertyName Name of the property
-	 * @param mixed $value Value for comparison
-	 * @return QueryBuilder
-	 * @api
-	 */
-	public function greaterThan($propertyName, $value) {
-		$this->where[] = sprintf(" (`%s`) > %s", $propertyName, $value);
-
-		return $this;
-	}
-
-	/**
-	 * Add a range filter (lt) for the given property
-	 *
-	 * @param string $propertyName Name of the property
-	 * @param mixed $value Value for comparison
-	 * @return QueryBuilder
-	 * @api
-	 */
-	public function lessThan($propertyName, $value) {
-		$this->where[] = sprintf(" (`%s`) < %s", $propertyName, $value);
-
-		return $this;
-	}
-
-	/**
-	 * Add a range filter (gte) for the given property
-	 *
-	 * @param string $propertyName Name of the property
-	 * @param mixed $value Value for comparison
-	 * @return QueryBuilder
-	 * @api
-	 */
-	public function greaterThanOrEqual($propertyName, $value) {
-		$this->where[] = sprintf(" (`%s`) >= %s", $propertyName, $value);
-
-		return $this;
-	}
-
-	/**
-	 * Add a range filter (lte) for the given property
-	 *
-	 * @param string $propertyName Name of the property
-	 * @param mixed $value Value for comparison
-	 * @return QueryBuilder
-	 * @api
-	 */
-	public function lessThanOrEqual($propertyName, $value) {
-		$this->where[] = sprintf(" (`%s`) <= %s", $propertyName, $value);
-
-		return $this;
-	}
-
-	/**
-	 * @param bool $countOnly
 	 * @return string
 	 */
-	protected function buildQueryString($countOnly=FALSE) {
+	protected function buildQueryString() {
 		$whereString = implode(' AND ', $this->where);
 		$orderString = implode(', ', $this->sorting);
 
-		if ($countOnly) {
-			$queryString = 'SELECT COUNT(DISTINCT(__identifier__)) AS objectCount FROM objects WHERE ' . $whereString;
-		} else {
-			$queryString = 'SELECT DISTINCT(__identifier__), * FROM objects WHERE ' . $whereString;
-		}
-
-		if (count($this->groups)) {
-			$queryString .= ' GROUP BY ' . implode(',', $this->groups);
-		}
-
-		if (!$countOnly && count($this->sorting)) {
+		$queryString = 'SELECT DISTINCT(__identifier__), * FROM objects WHERE ' . $whereString;
+		if (count($this->sorting)) {
 			$queryString .= ' ORDER BY ' . $orderString;
 		}
 
@@ -430,5 +348,23 @@ class SqLiteQueryBuilder {
 		}
 
 		return $queryString;
+	}
+
+	/**
+	 * @param string $propertyName
+	 * @param mixed $propertyValue
+	 * @param string $comparator Comparator sign i.e. '>' or '<='
+	 * @return QueryBuilderInterface
+	 */
+	protected function compare($propertyName, $propertyValue, $comparator) {
+		if ($propertyValue instanceof \DateTime) {
+			$this->where[] = sprintf("datetime(`%s`) %s strftime('%s', '%s')", $propertyName, $comparator, '%Y-%m-%d %H:%M:%S', $propertyValue->format('Y-m-d H:i:s'));
+		} else {
+			$parameterName = ':' . md5($propertyName . '#' . count($this->where));
+			$this->parameterMap[$parameterName] = $propertyValue;
+			$this->where[] = sprintf('(`%s`) %s %s', $propertyName, $comparator, $parameterName);
+		}
+
+		return $this;
 	}
 }
