@@ -1,13 +1,15 @@
-<?php
+<?php /** @noinspection SqlResolve */
 namespace Flowpack\SimpleSearch\Search;
+
+use Flowpack\SimpleSearch\Domain\Service\IndexInterface;
 
 /**
  * Query Builder for searches
  */
-class SqLiteQueryBuilder {
+class SqLiteQueryBuilder implements QueryBuilderInterface {
 
 	/**
-	 * @var \Flowpack\SimpleSearch\Domain\Service\IndexInterface
+	 * @var IndexInterface
 	 */
 	protected $indexClient;
 
@@ -45,9 +47,9 @@ class SqLiteQueryBuilder {
 	/**
 	 * Injection method used by Flow dependency injection
 	 *
-	 * @param \Flowpack\SimpleSearch\Domain\Service\IndexInterface $indexClient
+	 * @param IndexInterface $indexClient
 	 */
-	public function injectIndexClient(\Flowpack\SimpleSearch\Domain\Service\IndexInterface $indexClient) {
+	public function injectIndexClient(IndexInterface $indexClient) {
 		$this->indexClient = $indexClient;
 	}
 
@@ -84,7 +86,7 @@ class SqLiteQueryBuilder {
 	 */
 	public function limit($limit = NULL) {
 		if ($limit !== NULL) {
-			$limit = intval($limit);
+			$limit = (int)$limit;
 		}
 		$this->limit = $limit;
 		return $this;
@@ -98,10 +100,10 @@ class SqLiteQueryBuilder {
 	 */
 	public function from($from = NULL) {
 		if ($from !== NULL) {
-			$from = intval($from);
+			$from = (int)$from;
 		}
 
-		$this->from = intval($from);
+		$this->from = (int)$from;
 		return $this;
 	}
 
@@ -121,8 +123,8 @@ class SqLiteQueryBuilder {
 	/**
 	 * add an like query for a given property
 	 *
-	 * @param $propertyName
-	 * @param $propertyValue
+	 * @param string $propertyName
+	 * @param string $propertyValue
 	 * @return QueryBuilderInterface
 	 */
 	public function like($propertyName, $propertyValue) {
@@ -172,7 +174,6 @@ class SqLiteQueryBuilder {
 	 *
 	 * @param $propertyName
 	 * @param $propertyValue
-	 * @param string $format
 	 * @return QueryBuilderInterface
 	 */
 	public function lessThan($propertyName, $propertyValue) {
@@ -248,7 +249,6 @@ class SqLiteQueryBuilder {
 			$queryParameters[':ellipsis'] = $ellipsis;
 			$queryParameters[':resultTokens'] = ($resultTokens * -1);
 
-
 			$matchQuery = 'SELECT snippet(fulltext, :beginModifier, :endModifier, :ellipsis, -1, :resultTokens) as snippet FROM fulltext WHERE fulltext MATCH :searchword AND __identifier__ IN (' . implode(',', $identifierParameters) . ') LIMIT 1;';
 			$queryParameters[':searchword'] = $searchword;
 			$matchSnippet = $this->indexClient->executeStatement($matchQuery, $queryParameters);
@@ -266,7 +266,7 @@ class SqLiteQueryBuilder {
 	 *
 	 * @param string $propertyName
 	 * @param array $propertyValues
-	 * @return QueryBuilder
+	 * @return QueryBuilderInterface
 	 */
 	public function anyMatch($propertyName, $propertyValues) {
 		if ($propertyValues === null || empty($propertyValues) || $propertyValues[0] === null) {
@@ -283,9 +283,9 @@ class SqLiteQueryBuilder {
 				$queryString .= '(';
 			}
 			if ($key !== $lastElemtentKey) {
-				$queryString .= sprintf("(`%s`) = %s OR ", $propertyName, $parameterName);
+				$queryString .= sprintf('(`%s`) = %s OR ', $propertyName, $parameterName);
 			} else {
-				$queryString .= sprintf("(`%s`) = %s )", $propertyName, $parameterName);
+				$queryString .= sprintf('(`%s`) = %s )', $propertyName, $parameterName);
 			}
 		}
 
@@ -299,7 +299,7 @@ class SqLiteQueryBuilder {
 	 *
 	 * @param string $propertyName
 	 * @param array $propertyValues
-	 * @return QueryBuilder
+	 * @return QueryBuilderInterface
 	 */
 	public function likeAnyMatch($propertyName, $propertyValues) {
 		if ($propertyValues === null || empty($propertyValues) || $propertyValues[0] === null) {
@@ -316,9 +316,9 @@ class SqLiteQueryBuilder {
 				$queryString .= '(';
 			}
 			if ($key !== $lastElemtentKey) {
-				$queryString .= sprintf("(`%s`) LIKE %s OR ", $propertyName, $parameterName);
+				$queryString .= sprintf('(`%s`) LIKE %s OR ', $propertyName, $parameterName);
 			} else {
-				$queryString .= sprintf("(`%s`) LIKE %s)", $propertyName, $parameterName);
+				$queryString .= sprintf('(`%s`) LIKE %s)', $propertyName, $parameterName);
 			}
 		}
 
@@ -362,7 +362,7 @@ class SqLiteQueryBuilder {
 		} else {
 			$parameterName = ':' . md5($propertyName . '#' . count($this->where));
 			$this->parameterMap[$parameterName] = $propertyValue;
-			$this->where[] = sprintf("(`%s`) %s %s", $propertyName, $comparator, $parameterName);
+			$this->where[] = sprintf('(`%s`) %s %s', $propertyName, $comparator, $parameterName);
 		}
 
 		return $this;

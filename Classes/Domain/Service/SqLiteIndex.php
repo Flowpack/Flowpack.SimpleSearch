@@ -35,10 +35,17 @@ class SqLiteIndex implements IndexInterface {
 
 	/**
 	 * @param string $indexName
-	 * @param string $storageFolder The absolute file path (with trailing slash) to store this index in.
 	 */
 	public function __construct($indexName, $storageFolder) {
 		$this->indexName = $indexName;
+		$this->storageFolder = $storageFolder;
+	}
+
+	/**
+	 * @param string $storageFolder
+	 */
+	public function setStorageFolder($storageFolder)
+	{
 		$this->storageFolder = $storageFolder;
 	}
 
@@ -192,7 +199,7 @@ class SqLiteIndex implements IndexInterface {
 	public function query($query) {
 		$result = $this->connection->query($query);
 		$resultArray = array();
-		if ($result === false) {
+		if ($result === false || !$result instanceof \SQLite3Result) {
 			return $resultArray;
 		}
 		
@@ -218,8 +225,10 @@ class SqLiteIndex implements IndexInterface {
 
 		$result = $statement->execute();
 		$resultArray = array();
-		while ($resultRow = $result->fetchArray(SQLITE3_ASSOC)) {
-			$resultArray[] = $resultRow;
+		if ($result !== FALSE && $result instanceof \SQLite3Result) {
+			while ($resultRow = $result->fetchArray(SQLITE3_ASSOC)) {
+				$resultArray[] = $resultRow;
+			}
 		}
 
 		return $resultArray;
@@ -276,8 +285,10 @@ class SqLiteIndex implements IndexInterface {
 	 */
 	protected function loadAvailablePropertyFields() {
 		$result = $this->connection->query('PRAGMA table_info(objects);');
-		while ($property = $result->fetchArray(SQLITE3_ASSOC)) {
-			$this->propertyFieldsAvailable[] = $property['name'];
+		if ($result !== FALSE && $result instanceof \SQLite3Result) {
+			while ($property = $result->fetchArray(SQLITE3_ASSOC)) {
+				$this->propertyFieldsAvailable[] = $property['name'];
+			}
 		}
 	}
 
