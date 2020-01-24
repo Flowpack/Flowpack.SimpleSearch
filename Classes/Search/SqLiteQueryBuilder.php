@@ -57,7 +57,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param string $propertyName the property name to sort by
      * @return QueryBuilderInterface
      */
-    public function sortDesc($propertyName): QueryBuilderInterface
+    public function sortDesc(string $propertyName): QueryBuilderInterface
     {
         $this->sorting[] = 'objects.' . $propertyName . ' DESC';
 
@@ -70,7 +70,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param string $propertyName the property name to sort by
      * @return QueryBuilderInterface
      */
-    public function sortAsc($propertyName): QueryBuilderInterface
+    public function sortAsc(string $propertyName): QueryBuilderInterface
     {
         $this->sorting[] = 'objects.' . $propertyName . ' ASC';
 
@@ -83,7 +83,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param integer|null $limit
      * @return QueryBuilderInterface
      */
-    public function limit($limit): QueryBuilderInterface
+    public function limit(?int $limit = null): QueryBuilderInterface
     {
         if ($limit !== null) {
             $limit = (int)$limit;
@@ -98,7 +98,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param integer|null $from
      * @return QueryBuilderInterface
      */
-    public function from($from): QueryBuilderInterface
+    public function from(?int $from = null): QueryBuilderInterface
     {
         $this->from = $from === null ? $from : (int)$from;
         return $this;
@@ -111,7 +111,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param mixed $propertyValue
      * @return QueryBuilderInterface
      */
-    public function exactMatch($propertyName, $propertyValue): QueryBuilderInterface
+    public function exactMatch(string $propertyName, $propertyValue): QueryBuilderInterface
     {
         $this->compare($propertyName, $propertyValue, '=');
 
@@ -138,7 +138,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param string $searchword
      * @return QueryBuilderInterface
      */
-    public function fulltext($searchword): QueryBuilderInterface
+    public function fulltext(string $searchword): QueryBuilderInterface
     {
         $parameterName = ':' . md5('FULLTEXT#' . count($this->where));
         $this->where[] = '(__identifier__ IN (SELECT __identifier__ FROM fulltext WHERE fulltext MATCH ' . $parameterName . ' ORDER BY offsets(fulltext) ASC))';

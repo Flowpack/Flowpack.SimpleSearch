@@ -172,13 +172,9 @@ class SqLiteIndex implements IndexInterface
      */
     protected function bindFulltextParametersToStatement(\SQLite3Stmt $preparedStatement, array $fulltext): void
     {
-        $preparedStatement->bindValue(':h1', $fulltext['h1'] ?? '');
-        $preparedStatement->bindValue(':h2', $fulltext['h2'] ?? '');
-        $preparedStatement->bindValue(':h3', $fulltext['h3'] ?? '');
-        $preparedStatement->bindValue(':h4', $fulltext['h4'] ?? '');
-        $preparedStatement->bindValue(':h5', $fulltext['h5'] ?? '');
-        $preparedStatement->bindValue(':h6', $fulltext['h6'] ?? '');
-        $preparedStatement->bindValue(':text', $fulltext['text'] ?? '');
+        foreach (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'text'] as $bucketName) {
+            $preparedStatement->bindValue(':' . $bucketName, $fulltext[$bucketName] ?? '');
+        }
     }
 
     /**
