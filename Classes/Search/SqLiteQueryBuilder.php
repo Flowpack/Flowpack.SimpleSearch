@@ -57,7 +57,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param string $propertyName the property name to sort by
      * @return QueryBuilderInterface
      */
-    public function sortDesc(string $propertyName): QueryBuilderInterface
+    public function sortDesc($propertyName): QueryBuilderInterface
     {
         $this->sorting[] = 'objects.' . $propertyName . ' DESC';
 
@@ -70,7 +70,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param string $propertyName the property name to sort by
      * @return QueryBuilderInterface
      */
-    public function sortAsc(string $propertyName): QueryBuilderInterface
+    public function sortAsc($propertyName): QueryBuilderInterface
     {
         $this->sorting[] = 'objects.' . $propertyName . ' ASC';
 
@@ -83,7 +83,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param integer|null $limit
      * @return QueryBuilderInterface
      */
-    public function limit(?int $limit = null): QueryBuilderInterface
+    public function limit($limit): QueryBuilderInterface
     {
         if ($limit !== null) {
             $limit = (int)$limit;
@@ -98,7 +98,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param integer|null $from
      * @return QueryBuilderInterface
      */
-    public function from(?int $from = null): QueryBuilderInterface
+    public function from($from): QueryBuilderInterface
     {
         $this->from = $from === null ? $from : (int)$from;
         return $this;
@@ -138,7 +138,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param string $searchword
      * @return QueryBuilderInterface
      */
-    public function fulltext(string $searchword): QueryBuilderInterface
+    public function fulltext($searchword): QueryBuilderInterface
     {
         $parameterName = ':' . md5('FULLTEXT#' . count($this->where));
         $this->where[] = '(__identifier__ IN (SELECT __identifier__ FROM fulltext WHERE fulltext MATCH ' . $parameterName . ' ORDER BY offsets(fulltext) ASC))';
