@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Flowpack\SimpleSearch\Search;
 
 use Flowpack\SimpleSearch\Domain\Service\IndexInterface;
-use Neos\Flow\Annotations as Flow;
 
 /**
  * Query Builder for searches
@@ -12,10 +11,9 @@ use Neos\Flow\Annotations as Flow;
  * Note: some signatures are not as strict as in the interfaces, because two query builder interfaces are "mixed"
  * in classes implementing this one
  */
-class SqLiteQueryBuilder implements QueryBuilderInterface
+class MysqlQueryBuilder implements QueryBuilderInterface
 {
     /**
-     * @Flow\Inject
      * @var IndexInterface
      */
     protected $indexClient;
@@ -52,6 +50,16 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
     protected $parameterMap = [];
 
     /**
+     * Injection method used by Flow dependency injection
+     *
+     * @param IndexInterface $indexClient
+     */
+    public function injectIndexClient(IndexInterface $indexClient)
+    {
+        $this->indexClient = $indexClient;
+    }
+
+    /**
      * Sort descending by $propertyName
      *
      * @param string $propertyName the property name to sort by
@@ -59,7 +67,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      */
     public function sortDesc($propertyName): QueryBuilderInterface
     {
-        $this->sorting[] = 'objects.' . $propertyName . ' DESC';
+        $this->sorting[] = '"fulltext_objects"."' . $propertyName . '" DESC';
 
         return $this;
     }
@@ -72,7 +80,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      */
     public function sortAsc($propertyName): QueryBuilderInterface
     {
-        $this->sorting[] = 'objects.' . $propertyName . ' ASC';
+        $this->sorting[] = '"fulltext_objects"."' . $propertyName . '" ASC';
 
         return $this;
     }
@@ -108,7 +116,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * add an exact-match query for a given property
      *
      * @param string $propertyName
-     * @param mixed $propertyValue
+     * @param string $propertyValue
      * @return QueryBuilderInterface
      */
     public function exactMatch(string $propertyName, $propertyValue): QueryBuilderInterface
@@ -128,7 +136,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
     public function like(string $propertyName, $propertyValue): QueryBuilderInterface
     {
         $parameterName = ':' . md5($propertyName . '#' . count($this->where));
-        $this->where[] = '(`' . $propertyName . '` LIKE ' . $parameterName . ')';
+        $this->where[] = '("' . $propertyName . '" LIKE ' . $parameterName . ')';
         $this->parameterMap[$parameterName] = '%' . $propertyValue . '%';
 
         return $this;
@@ -141,7 +149,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
     public function fulltext($searchword): QueryBuilderInterface
     {
         $parameterName = ':' . md5('FULLTEXT#' . count($this->where));
-        $this->where[] = '(__identifier__ IN (SELECT __identifier__ FROM fulltext WHERE fulltext MATCH ' . $parameterName . ' ORDER BY offsets(fulltext) ASC))';
+        $this->where[] = '("__identifier__" IN (SELECT "__identifier__" FROM "fulltext_index" WHERE MATCH ("h1", "h2", "h3", "h4", "h5", "h6", "text") AGAINST (' . $parameterName . ')))';
         $this->parameterMap[$parameterName] = $searchword;
 
         return $this;
@@ -151,10 +159,10 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * add a greater than query for a given property
      *
      * @param string $propertyName
-     * @param mixed $propertyValue
+     * @param string $propertyValue
      * @return QueryBuilderInterface
      */
-    public function greaterThan(string $propertyName, $propertyValue): QueryBuilderInterface
+    public function greaterThan($propertyName, $propertyValue)
     {
         return $this->compare($propertyName, $propertyValue, '>');
     }
@@ -163,10 +171,10 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * add a greater than or equal query for a given property
      *
      * @param string $propertyName
-     * @param mixed $propertyValue
+     * @param string $propertyValue
      * @return QueryBuilderInterface
      */
-    public function greaterThanOrEqual(string $propertyName, $propertyValue): QueryBuilderInterface
+    public function greaterThanOrEqual($propertyName, $propertyValue)
     {
         return $this->compare($propertyName, $propertyValue, '>=');
     }
@@ -174,11 +182,11 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
     /**
      * add a less than query for a given property
      *
-     * @param string $propertyName
-     * @param mixed $propertyValue
+     * @param $propertyName
+     * @param $propertyValue
      * @return QueryBuilderInterface
      */
-    public function lessThan(string $propertyName, $propertyValue): QueryBuilderInterface
+    public function lessThan($propertyName, $propertyValue)
     {
         return $this->compare($propertyName, $propertyValue, '<');
     }
@@ -186,11 +194,11 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
     /**
      * add a less than or equal query for a given property
      *
-     * @param string $propertyName
-     * @param mixed $propertyValue
+     * @param $propertyName
+     * @param $propertyValue
      * @return QueryBuilderInterface
      */
-    public function lessThanOrEqual(string $propertyName, $propertyValue): QueryBuilderInterface
+    public function lessThanOrEqual($propertyName, $propertyValue)
     {
         return $this->compare($propertyName, $propertyValue, '<=');
     }
@@ -227,45 +235,147 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * Produces a snippet with the first match result for the search term.
      *
      * @param string $searchword The search word
-     * @param integer $resultTokens The amount of tokens (words) to get surrounding the match hit. (defaults to 60)
+     * @param integer $resultTokens The amount of characters to get surrounding the match hit. (defaults to 200)
      * @param string $ellipsis added to the end of the string if the text was longer than the snippet produced. (defaults to "...")
      * @param string $beginModifier added immediately before the searchword in the snippet (defaults to <b>)
      * @param string $endModifier added immediately after the searchword in the snippet (defaults to </b>)
      * @return string
+     * @see https://github.com/boyter/php-excerpt
      */
-    public function fulltextMatchResult(string $searchword, int $resultTokens = 60, string $ellipsis = '...', string $beginModifier = '<b>', string $endModifier = '</b>'): string
+    public function fulltextMatchResult($searchword, $resultTokens = 200, $ellipsis = '...', $beginModifier = '<b>', $endModifier = '</b>'): string
     {
+        $searchword = trim($searchword);
+
         $query = $this->buildQueryString();
         $results = $this->indexClient->executeStatement($query, []);
 
-        // SQLite3 has a hard-coded limit of 999 query variables, so we split the $result in chunks
-        // of 990 elements (we need some space for our own variables), query these, and return the first result.
-        // @see https://sqlite.org/limits.html -> "Maximum Number Of Host Parameters In A Single SQL Statement"
-        $chunks = array_chunk($results, 990);
-        foreach ($chunks as $chunk) {
-            $queryParameters = [];
-            $identifierParameters = [];
-            foreach ($chunk as $key => $result) {
-                $parameterName = ':possibleIdentifier' . $key;
-                $identifierParameters[] = $parameterName;
-                $queryParameters[$parameterName] = $result['__identifier__'];
-            }
+        if ($results === []) {
+            return '';
+        }
 
-            $queryParameters[':beginModifier'] = $beginModifier;
-            $queryParameters[':endModifier'] = $endModifier;
-            $queryParameters[':ellipsis'] = $ellipsis;
-            $queryParameters[':resultTokens'] = ($resultTokens * -1);
-
-            $matchQuery = 'SELECT snippet(fulltext, :beginModifier, :endModifier, :ellipsis, -1, :resultTokens) as snippet FROM fulltext WHERE fulltext MATCH :searchword AND __identifier__ IN (' . implode(',', $identifierParameters) . ') LIMIT 1;';
-            $queryParameters[':searchword'] = $searchword;
-            $matchSnippet = $this->indexClient->executeStatement($matchQuery, $queryParameters);
-
-            // If we have a hit here, we stop searching and return it.
-            if (isset($matchSnippet[0]['snippet']) && $matchSnippet[0]['snippet'] !== '') {
-                return $matchSnippet[0]['snippet'];
+        $matches = [];
+        foreach ($results[0] as $indexedFieldName => $indexedFieldContent) {
+            if (!empty($indexedFieldContent) && strpos($indexedFieldName, '_') !== 0) {
+                $matches[] = trim(strip_tags((string)$indexedFieldContent));
             }
         }
-        return '';
+        $matchContent = implode(' ', $matches);
+
+        $searchWordParts = explode(' ', $searchword);
+        $matchContent = preg_replace(
+            array_map(static function (string $searchWordPart) {
+                return sprintf('/(%s)/iu', preg_quote($searchWordPart, '/'));
+            }, $searchWordParts),
+            array_fill(0, count($searchWordParts), sprintf('%s$1%s', $beginModifier, $endModifier)),
+            $matchContent
+        );
+
+        $matchLength = strlen($matchContent);
+        if ($matchLength <= $resultTokens) {
+            return $matchContent;
+        }
+
+        $locations = $this->extractLocations($searchWordParts, $matchContent);
+        $snippetLocation = $this->determineSnippetLocation($locations, (int)($resultTokens / 3));
+
+        return $this->extractSnippet($resultTokens, $ellipsis, $matchLength, $snippetLocation, $matchContent);
+    }
+
+    /**
+     * find the locations of each of the words
+     * Nothing exciting here. The array_unique is required
+     * unless you decide to make the words unique before passing in
+     *
+     * @param array $words
+     * @param string $fulltext
+     * @return array
+     * @see https://github.com/boyter/php-excerpt
+     */
+    private function extractLocations(array $words, string $fulltext): array
+    {
+        $locations = [];
+        foreach ($words as $word) {
+            $loc = stripos($fulltext, $word);
+            while ($loc !== false) {
+                $locations[0] = $loc;
+                $loc = stripos($fulltext, $word, $loc + strlen($word));
+            }
+        }
+
+        $locations = array_unique($locations);
+
+        sort($locations);
+        return $locations;
+    }
+
+    /**
+     * Work out which is the most relevant portion to display
+     *
+     * This is done by looping over each match and finding the smallest distance between two found
+     * strings. The idea being that the closer the terms are the better match the snippet would be.
+     * When checking for matches we only change the location if there is a better match.
+     * The only exception is where we have only two matches in which case we just take the
+     * first as will be equally distant.
+     *
+     * @param array $locations
+     * @param int $relativePosition
+     * @return int
+     * @see https://github.com/boyter/php-excerpt
+     */
+    private function determineSnippetLocation(array $locations, int $relativePosition): int
+    {
+        $locationsCount = count($locations);
+        $smallestDiff = PHP_INT_MAX;
+
+        if ($locationsCount === 0) {
+            return 0;
+        }
+
+        $startPosition = $locations[0];
+        if ($locationsCount > 2) {
+            // skip the first as we check 1 behind
+            for ($i = 1; $i < $locationsCount; $i++) {
+                if ($i === $locationsCount - 1) { // at the end
+                    $diff = $locations[$i] - $locations[$i - 1];
+                } else {
+                    $diff = $locations[$i + 1] - $locations[$i];
+                }
+
+                if ($smallestDiff > $diff) {
+                    $smallestDiff = $diff;
+                    $startPosition = $locations[$i];
+                }
+            }
+        }
+
+        return $startPosition > $relativePosition ? $startPosition - $relativePosition : 0;
+    }
+
+    /**
+     * @param int $resultTokens
+     * @param string $ellipsis
+     * @param int $matchLength
+     * @param int $snippetLocation
+     * @param string $matchContent
+     * @return string
+     */
+    private function extractSnippet(int $resultTokens, string $ellipsis, int $matchLength, int $snippetLocation, string $matchContent): string
+    {
+        if ($matchLength - $snippetLocation < $resultTokens) {
+            $snippetLocation = (int)($snippetLocation - ($matchLength - $snippetLocation) / 2);
+        }
+
+        $snippet = substr($matchContent, $snippetLocation, $resultTokens);
+
+        if ($snippetLocation + $resultTokens < $matchLength) {
+            $snippet = substr($snippet, 0, strrpos($snippet, ' ')) . $ellipsis;
+        }
+
+        if ($snippetLocation !== 0) {
+            $snippet = $ellipsis . substr($snippet, strpos($snippet, ' ') + 1);
+        }
+
+        return $snippet;
     }
 
     /**
@@ -291,9 +401,9 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
                 $queryString .= '(';
             }
             if ($key !== $lastElemtentKey) {
-                $queryString .= sprintf('(`%s`) = %s OR ', $propertyName, $parameterName);
+                $queryString .= sprintf('("%s") = %s OR ', $propertyName, $parameterName);
             } else {
-                $queryString .= sprintf('(`%s`) = %s )', $propertyName, $parameterName);
+                $queryString .= sprintf('("%s") = %s )', $propertyName, $parameterName);
             }
         }
 
@@ -316,7 +426,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
         }
 
         $queryString = null;
-        $lastElemtentKey = count($propertyValues) - 1;
+        $lastElementKey = count($propertyValues) - 1;
         foreach ($propertyValues as $key => $propertyValue) {
             $parameterName = ':' . md5($propertyName . '#' . count($this->where) . $key);
             $this->parameterMap[$parameterName] = '%' . $propertyValue . '%';
@@ -324,10 +434,10 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
             if ($key === 0) {
                 $queryString .= '(';
             }
-            if ($key !== $lastElemtentKey) {
-                $queryString .= sprintf('(`%s`) LIKE %s OR ', $propertyName, $parameterName);
+            if ($key !== $lastElementKey) {
+                $queryString .= sprintf('("%s") LIKE %s OR ', $propertyName, $parameterName);
             } else {
-                $queryString .= sprintf('(`%s`) LIKE %s)', $propertyName, $parameterName);
+                $queryString .= sprintf('("%s") LIKE %s)', $propertyName, $parameterName);
             }
         }
 
@@ -344,7 +454,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
         $whereString = implode(' AND ', $this->where);
         $orderString = implode(', ', $this->sorting);
 
-        $queryString = 'SELECT DISTINCT(__identifier__), * FROM objects WHERE ' . $whereString;
+        $queryString = 'SELECT * FROM "fulltext_objects" WHERE ' . $whereString;
         if (count($this->sorting)) {
             $queryString .= ' ORDER BY ' . $orderString;
         }
@@ -366,14 +476,14 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param string $comparator Comparator sign i.e. '>' or '<='
      * @return QueryBuilderInterface
      */
-    protected function compare(string $propertyName, $propertyValue, string $comparator): QueryBuilderInterface
+    protected function compare($propertyName, $propertyValue, $comparator): QueryBuilderInterface
     {
         if ($propertyValue instanceof \DateTime) {
             $this->where[] = sprintf("datetime(`%s`) %s strftime('%s', '%s')", $propertyName, $comparator, '%Y-%m-%d %H:%M:%S', $propertyValue->format('Y-m-d H:i:s'));
         } else {
             $parameterName = ':' . md5($propertyName . '#' . count($this->where));
             $this->parameterMap[$parameterName] = $propertyValue;
-            $this->where[] = sprintf('(`%s`) %s %s', $propertyName, $comparator, $parameterName);
+            $this->where[] = sprintf('("%s") %s %s', $propertyName, $comparator, $parameterName);
         }
 
         return $this;

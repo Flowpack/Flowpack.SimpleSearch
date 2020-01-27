@@ -8,3 +8,13 @@ Flowpack\SimpleSearch\Domain\Service\SqLiteIndex:
   arguments:
     2:
       value: '%FLOW_PATH_DATA%Persistent/Flowpack_SimpleSearch_SqLite/'
+
+Flowpack\SimpleSearch\Domain\Service\MysqlIndex:
+  arguments:
+    2:
+      value: 'mysql:host=127.0.0.1;dbname=<set-db-name>;charset=utf8mb4'
+  properties:
+    username:
+      value: '<set-user-name>'
+    password:
+      value: '<set-password>'
