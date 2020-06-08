@@ -15,7 +15,7 @@ interface QueryBuilderInterface
      * @param string $propertyName the property name to sort by
      * @return QueryBuilderInterface
      */
-    public function sortDesc(string $propertyName): QueryBuilderInterface;
+    public function sortDesc($propertyName): QueryBuilderInterface;
 
     /**
      * Sort ascending by $propertyName
@@ -23,7 +23,7 @@ interface QueryBuilderInterface
      * @param string $propertyName the property name to sort by
      * @return QueryBuilderInterface
      */
-    public function sortAsc(string $propertyName): QueryBuilderInterface;
+    public function sortAsc($propertyName): QueryBuilderInterface;
 
     /**
      * output only $limit records
@@ -31,7 +31,7 @@ interface QueryBuilderInterface
      * @param integer $limit
      * @return QueryBuilderInterface
      */
-    public function limit(?int $limit): QueryBuilderInterface;
+    public function limit($limit): QueryBuilderInterface;
 
     /**
      * Start returned results $from number results.
@@ -39,7 +39,7 @@ interface QueryBuilderInterface
      * @param integer $from
      * @return QueryBuilderInterface
      */
-    public function from(?int $from): QueryBuilderInterface;
+    public function from($from): QueryBuilderInterface;
 
     /**
      * add an exact-match query for a given property
@@ -48,7 +48,7 @@ interface QueryBuilderInterface
      * @param mixed $propertyValue
      * @return QueryBuilderInterface
      */
-    public function exactMatch(string $propertyName, $propertyValue): QueryBuilderInterface;
+    public function exactMatch($propertyName, $propertyValue): QueryBuilderInterface;
 
     /**
      * add an like query for a given property
@@ -65,7 +65,7 @@ interface QueryBuilderInterface
      * @param string $searchword
      * @return QueryBuilderInterface
      */
-    public function fulltext(string $searchword): QueryBuilderInterface;
+    public function fulltext($searchword): QueryBuilderInterface;
 
     /**
      * Execute the query and return the list of nodes as result

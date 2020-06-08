@@ -116,10 +116,10 @@ class MysqlQueryBuilder implements QueryBuilderInterface
      * add an exact-match query for a given property
      *
      * @param string $propertyName
-     * @param string $propertyValue
+     * @param mixed $propertyValue
      * @return QueryBuilderInterface
      */
-    public function exactMatch(string $propertyName, $propertyValue): QueryBuilderInterface
+    public function exactMatch($propertyName, $propertyValue): QueryBuilderInterface
     {
         $this->compare($propertyName, $propertyValue, '=');
 

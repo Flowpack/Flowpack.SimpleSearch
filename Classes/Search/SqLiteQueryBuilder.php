@@ -111,7 +111,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param mixed $propertyValue
      * @return QueryBuilderInterface
      */
-    public function exactMatch(string $propertyName, $propertyValue): QueryBuilderInterface
+    public function exactMatch($propertyName, $propertyValue): QueryBuilderInterface
     {
         $this->compare($propertyName, $propertyValue, '=');
 
