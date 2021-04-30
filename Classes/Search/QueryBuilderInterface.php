@@ -59,6 +59,16 @@ interface QueryBuilderInterface
      */
     public function like(string $propertyName, $propertyValue): QueryBuilderInterface;
 
+
+    /**
+     * add an custom query condition
+     *
+     * @param string $conditon
+     * @return QueryBuilderInterface
+     */
+    public function customCondition(string $conditon): QueryBuilderInterface;
+
+
     /**
      * Match the searchword against the fulltext index
      *

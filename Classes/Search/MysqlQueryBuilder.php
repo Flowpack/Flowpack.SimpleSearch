@@ -65,7 +65,7 @@ class MysqlQueryBuilder implements QueryBuilderInterface
      * @param string $propertyName the property name to sort by
      * @return QueryBuilderInterface
      */
-    public function sortDesc($propertyName): QueryBuilderInterface
+    public function sortDesc(string $propertyName): QueryBuilderInterface
     {
         $this->sorting[] = '"fulltext_objects"."' . $propertyName . '" DESC';
 
@@ -78,7 +78,7 @@ class MysqlQueryBuilder implements QueryBuilderInterface
      * @param string $propertyName the property name to sort by
      * @return QueryBuilderInterface
      */
-    public function sortAsc($propertyName): QueryBuilderInterface
+    public function sortAsc(string $propertyName): QueryBuilderInterface
     {
         $this->sorting[] = '"fulltext_objects"."' . $propertyName . '" ASC';
 
@@ -143,10 +143,23 @@ class MysqlQueryBuilder implements QueryBuilderInterface
     }
 
     /**
+     * Add a custom condition
+     *
+     * @param string $conditon
+     * @return QueryBuilderInterface
+     */
+    public function customCondition(string $conditon): QueryBuilderInterface
+    {
+        $this->where[] = $conditon;
+
+        return $this;
+    }
+
+    /**
      * @param string $searchword
      * @return QueryBuilderInterface
      */
-    public function fulltext($searchword): QueryBuilderInterface
+    public function fulltext(string $searchword): QueryBuilderInterface
     {
         $parameterName = ':' . md5('FULLTEXT#' . count($this->where));
         $this->where[] = '("__identifier__" IN (SELECT "__identifier__" FROM "fulltext_index" WHERE MATCH ("h1", "h2", "h3", "h4", "h5", "h6", "text") AGAINST (' . $parameterName . ')))';
@@ -247,7 +260,7 @@ class MysqlQueryBuilder implements QueryBuilderInterface
         $searchword = trim($searchword);
 
         $query = $this->buildQueryString();
-        $results = $this->indexClient->executeStatement($query, []);
+        $results = $this->indexClient->executeStatement($query, $this->parameterMap);
 
         if ($results === []) {
             return '';
