@@ -144,7 +144,7 @@ class SqLiteIndex implements IndexInterface
      * @param array $fulltext
      * @param string $identifier
      */
-    protected function insertOrUpdateFulltextToIndex($fulltext, $identifier): void
+    protected function insertOrUpdateFulltextToIndex(array $fulltext, string $identifier): void
     {
         $preparedStatement = $this->connection->prepare('INSERT OR REPLACE INTO fulltext (__identifier__, h1, h2, h3, h4, h5, h6, text) VALUES (:identifier, :h1, :h2, :h3, :h4, :h5, :h6, :text);');
         $preparedStatement->bindValue(':identifier', $identifier);
