@@ -54,7 +54,7 @@ class MysqlQueryBuilder implements QueryBuilderInterface
      *
      * @param IndexInterface $indexClient
      */
-    public function injectIndexClient(IndexInterface $indexClient)
+    public function injectIndexClient(IndexInterface $indexClient): void
     {
         $this->indexClient = $indexClient;
     }
@@ -162,7 +162,7 @@ class MysqlQueryBuilder implements QueryBuilderInterface
      * @param string $propertyValue
      * @return QueryBuilderInterface
      */
-    public function greaterThan($propertyName, $propertyValue)
+    public function greaterThan($propertyName, $propertyValue): QueryBuilderInterface
     {
         return $this->compare($propertyName, $propertyValue, '>');
     }
@@ -174,7 +174,7 @@ class MysqlQueryBuilder implements QueryBuilderInterface
      * @param string $propertyValue
      * @return QueryBuilderInterface
      */
-    public function greaterThanOrEqual($propertyName, $propertyValue)
+    public function greaterThanOrEqual($propertyName, $propertyValue): QueryBuilderInterface
     {
         return $this->compare($propertyName, $propertyValue, '>=');
     }
@@ -186,7 +186,7 @@ class MysqlQueryBuilder implements QueryBuilderInterface
      * @param $propertyValue
      * @return QueryBuilderInterface
      */
-    public function lessThan($propertyName, $propertyValue)
+    public function lessThan($propertyName, $propertyValue): QueryBuilderInterface
     {
         return $this->compare($propertyName, $propertyValue, '<');
     }
@@ -198,7 +198,7 @@ class MysqlQueryBuilder implements QueryBuilderInterface
      * @param $propertyValue
      * @return QueryBuilderInterface
      */
-    public function lessThanOrEqual($propertyName, $propertyValue)
+    public function lessThanOrEqual($propertyName, $propertyValue): QueryBuilderInterface
     {
         return $this->compare($propertyName, $propertyValue, '<=');
     }
