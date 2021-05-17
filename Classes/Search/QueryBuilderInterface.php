@@ -28,7 +28,7 @@ interface QueryBuilderInterface
     /**
      * output only $limit records
      *
-     * @param integer $limit
+     * @param int|null $limit
      * @return QueryBuilderInterface
      */
     public function limit(?int $limit): QueryBuilderInterface;
@@ -36,7 +36,7 @@ interface QueryBuilderInterface
     /**
      * Start returned results $from number results.
      *
-     * @param integer $from
+     * @param int|null $from
      * @return QueryBuilderInterface
      */
     public function from(?int $from): QueryBuilderInterface;
@@ -77,7 +77,7 @@ interface QueryBuilderInterface
     /**
      * Return the total number of hits for the query.
      *
-     * @return integer
+     * @return int
      */
     public function count(): int;
 }

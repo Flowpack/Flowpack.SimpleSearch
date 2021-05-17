@@ -132,7 +132,7 @@ class SqLiteIndex implements IndexInterface
     }
 
     /**
-     * @param integer $argumentNumber
+     * @param int $argumentNumber
      * @return string
      */
     protected function preparedStatementArgumentName(int $argumentNumber): string
