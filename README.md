@@ -29,9 +29,6 @@ and configure the DB connection as needed:
     Flowpack\SimpleSearch\Domain\Service\IndexInterface:
       className: 'Flowpack\SimpleSearch\Domain\Service\MysqlIndex'
     
-    Neos\ContentRepository\Search\Search\QueryBuilderInterface:
-      className: 'Flowpack\SimpleSearch\ContentRepositoryAdaptor\Search\MysqlQueryBuilder'
-    
     Flowpack\SimpleSearch\Domain\Service\MysqlIndex:
       arguments:
         1:
