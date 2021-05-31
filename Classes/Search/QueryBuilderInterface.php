@@ -31,7 +31,7 @@ interface QueryBuilderInterface
      * @param int|null $limit
      * @return QueryBuilderInterface
      */
-    public function limit(?int $limit): QueryBuilderInterface;
+    public function limit($limit): QueryBuilderInterface;
 
     /**
      * Start returned results $from number results.
@@ -39,7 +39,7 @@ interface QueryBuilderInterface
      * @param int|null $from
      * @return QueryBuilderInterface
      */
-    public function from(?int $from): QueryBuilderInterface;
+    public function from($from): QueryBuilderInterface;
 
     /**
      * add an exact-match query for a given property
@@ -59,15 +59,13 @@ interface QueryBuilderInterface
      */
     public function like(string $propertyName, $propertyValue): QueryBuilderInterface;
 
-
     /**
      * add an custom query condition
      *
-     * @param string $conditon
+     * @param string $condition
      * @return QueryBuilderInterface
      */
-    public function customCondition(string $conditon): QueryBuilderInterface;
-
+    public function customCondition(string $condition): QueryBuilderInterface;
 
     /**
      * Match the searchword against the fulltext index

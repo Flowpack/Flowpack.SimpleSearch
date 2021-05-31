@@ -93,9 +93,6 @@ class MysqlQueryBuilder implements QueryBuilderInterface
      */
     public function limit($limit): QueryBuilderInterface
     {
-        if ($limit !== null) {
-            $limit = (int)$limit;
-        }
         $this->limit = $limit === null ? $limit : (int)$limit;
         return $this;
     }
