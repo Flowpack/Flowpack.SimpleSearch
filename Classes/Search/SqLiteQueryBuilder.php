@@ -21,12 +21,12 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
     protected $indexClient;
 
     /**
-     * @var integer
+     * @var int
      */
     protected $limit;
 
     /**
-     * @var integer
+     * @var int
      */
     protected $from;
 
@@ -80,7 +80,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
     /**
      * output only $limit records
      *
-     * @param integer|null $limit
+     * @param int|null $limit
      * @return QueryBuilderInterface
      */
     public function limit($limit): QueryBuilderInterface
@@ -95,7 +95,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
     /**
      * Start returned results $from number results.
      *
-     * @param integer|null $from
+     * @param int|null $from
      * @return QueryBuilderInterface
      */
     public function from($from): QueryBuilderInterface
@@ -228,7 +228,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
     /**
      * Return the total number of hits for the query.
      *
-     * @return integer
+     * @return int
      */
     public function count(): int
     {
@@ -240,7 +240,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * Produces a snippet with the first match result for the search term.
      *
      * @param string $searchword The search word
-     * @param integer $resultTokens The amount of tokens (words) to get surrounding the match hit. (defaults to 60)
+     * @param int $resultTokens The amount of tokens (words) to get surrounding the match hit. (defaults to 60)
      * @param string $ellipsis added to the end of the string if the text was longer than the snippet produced. (defaults to "...")
      * @param string $beginModifier added immediately before the searchword in the snippet (defaults to <b>)
      * @param string $endModifier added immediately after the searchword in the snippet (defaults to </b>)

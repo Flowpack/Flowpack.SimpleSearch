@@ -34,7 +34,7 @@ class IndexFactory
 
     /**
      * @param string $indexName
-     * @param string $indexType Class name for index instance
+     * @param string|null $indexType Class name for index instance
      * @return IndexInterface
      * @throws Exception
      */
