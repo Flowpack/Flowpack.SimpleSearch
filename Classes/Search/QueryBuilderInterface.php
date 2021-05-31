@@ -68,9 +68,9 @@ interface QueryBuilderInterface
     public function fulltext(string $searchword): QueryBuilderInterface;
 
     /**
-     * Execute the query and return the list of nodes as result
+     * Execute the query and return the list as result
      *
-     * @return array<\Neos\ContentRepository\Domain\Model\NodeInterface>
+     * @return array
      */
     public function execute(): array;
 
