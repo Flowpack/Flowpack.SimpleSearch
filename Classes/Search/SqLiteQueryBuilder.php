@@ -57,7 +57,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param string $propertyName the property name to sort by
      * @return QueryBuilderInterface
      */
-    public function sortDesc($propertyName): QueryBuilderInterface
+    public function sortDesc(string $propertyName): QueryBuilderInterface
     {
         $this->sorting[] = 'objects.' . $propertyName . ' DESC';
 
@@ -70,7 +70,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
      * @param string $propertyName the property name to sort by
      * @return QueryBuilderInterface
      */
-    public function sortAsc($propertyName): QueryBuilderInterface
+    public function sortAsc(string $propertyName): QueryBuilderInterface
     {
         $this->sorting[] = 'objects.' . $propertyName . ' ASC';
 
@@ -135,10 +135,23 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
     }
 
     /**
+     * Add a custom condition
+     *
+     * @param string $conditon
+     * @return QueryBuilderInterface
+     */
+    public function customCondition(string $conditon): QueryBuilderInterface
+    {
+        $this->where[] = $conditon;
+
+        return $this;
+    }
+
+    /**
      * @param string $searchword
      * @return QueryBuilderInterface
      */
-    public function fulltext($searchword): QueryBuilderInterface
+    public function fulltext(string $searchword): QueryBuilderInterface
     {
         $parameterName = ':' . md5('FULLTEXT#' . count($this->where));
         $this->where[] = '(__identifier__ IN (SELECT __identifier__ FROM fulltext WHERE fulltext MATCH ' . $parameterName . ' ORDER BY offsets(fulltext) ASC))';
@@ -236,8 +249,7 @@ class SqLiteQueryBuilder implements QueryBuilderInterface
     public function fulltextMatchResult(string $searchword, int $resultTokens = 60, string $ellipsis = '...', string $beginModifier = '<b>', string $endModifier = '</b>'): string
     {
         $query = $this->buildQueryString();
-        $results = $this->indexClient->executeStatement($query, []);
-
+        $results = $this->indexClient->executeStatement($query, $this->parameterMap);
         // SQLite3 has a hard-coded limit of 999 query variables, so we split the $result in chunks
         // of 990 elements (we need some space for our own variables), query these, and return the first result.
         // @see https://sqlite.org/limits.html -> "Maximum Number Of Host Parameters In A Single SQL Statement"
