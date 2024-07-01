@@ -145,8 +145,8 @@ class MysqlIndex implements IndexInterface
             $valueNamesString .= $this->preparedStatementArgumentName($statementArgumentNumber) . ', ';
             $statementArgumentNumber++;
         }
-        $propertyColumnNamesString = trim($propertyColumnNamesString, ', \t\n\r\0\x0B');
-        $valueNamesString = trim($valueNamesString, ', \t\n\r\0\x0B');
+        $propertyColumnNamesString = trim($propertyColumnNamesString, ", \t\n\r\0\x0B");
+        $valueNamesString = trim($valueNamesString, ", \t\n\r\0\x0B");
         $preparedStatement = $this->connection->prepare('REPLACE INTO "fulltext_objects" (' . $propertyColumnNamesString . ') VALUES (' . $valueNamesString . ')');
 
         $preparedStatement->bindValue(':__identifier__', $identifier);
